@@ -6,7 +6,7 @@ import {
   ShieldCheck, Tag, PlusCircle,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { cartApi, customerApi } from "@/lib/api/services";
+import { cartApi, customerApi, extractCarts } from "@/lib/api/services";
 import { formatPrice } from "@/lib/theme";
 
 // ===========================================================================
@@ -71,7 +71,34 @@ export default function CheckoutPage() {
     (async () => {
       try {
         const cartRes = await cartApi.getDetails(customer.phone, outlet._id, token);
-        setCartData(cartRes.data?.[0] || null);
+        const carts = extractCarts(cartRes);
+        
+        let allItems = [];
+        let totalOrderTotal = 0;
+        let totalSavedAmount = 0;
+        let totalDeliveryCharge = 0;
+        let orderType = "Door Delivery";
+        let instruction = "";
+
+        carts.forEach(cart => {
+           if (cart.items) allItems.push(...cart.items);
+           totalOrderTotal += cart.orderTotal || cart.subTotal || 0;
+           totalSavedAmount += cart.savedAmount || 0;
+           totalDeliveryCharge += cart.deliveryCharge || 0;
+           if (cart.orderType) orderType = cart.orderType;
+           if (cart.instruction) instruction = cart.instruction;
+        });
+
+        const mergedCart = {
+           items: allItems,
+           orderTotal: totalOrderTotal,
+           savedAmount: totalSavedAmount,
+           deliveryCharge: totalDeliveryCharge,
+           orderType: orderType,
+           instruction: instruction
+        };
+        
+        setCartData(mergedCart);
         const addrRes = await customerApi.getAddresses(customer.phone, 10.777460, 79.634514, token);
         
         const savedAddrStr = localStorage.getItem("selectedAddress");
