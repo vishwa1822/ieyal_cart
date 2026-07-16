@@ -36,6 +36,7 @@ export const organizationApi = {
   getOutlets: (belongsTo, lat, lng) =>
     apiRequest(ENDPOINTS.organization.getOutlets, {
       body: { belongsTo, locationSorting: true, lat, lng },
+      params: { page: 1, limit: 100 },
     }),
 
   // POST /organization/get-store-status/:orgId  { outletId, belongsTo }

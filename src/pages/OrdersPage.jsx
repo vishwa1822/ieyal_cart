@@ -130,9 +130,8 @@ function OrderCard({ order, onReorder, reordering }) {
             </span>
           )}
           {order.paymentStatus && (
-            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${
-              order.paymentStatus === "Paid" ? "bg-success/10 text-success border-success/20" : "bg-[var(--color-bg)] text-faint border-border"
-            }`}>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${order.paymentStatus === "Paid" ? "bg-success/10 text-success border-success/20" : "bg-[var(--color-bg)] text-faint border-border"
+              }`}>
               {order.paymentStatus}
             </span>
           )}
@@ -213,15 +212,15 @@ export default function OrdersPage() {
       const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
         ? { addressId: savedAddr.id || savedAddr._id }
         : (order.addressId ? { addressId: order.addressId } : {
-            address1: "Default",
-            address2: "Default",
-            city: "Default",
-            state: "Default",
-            country: "India",
-            pincode: "000000",
-            latitude: 10.777460,
-            longitude: 79.634514
-          });
+          address1: "Default",
+          address2: "Default",
+          city: "Default",
+          state: "Default",
+          country: "India",
+          pincode: "000000",
+          latitude: 10.777460,
+          longitude: 79.634514
+        });
 
       const payload = {
         items,

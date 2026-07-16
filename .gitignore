@@ -40,3 +40,6 @@ out
 .npm
 .eslintcache
 .stylelintcache
+
+# Temporary scratch scripts
+scratch/

@@ -62,7 +62,12 @@ export function AppProvider({ children }) {
     setUserLocation({ lat, lng, source });
     try {
       const outletsRes = await organizationApi.getOutlets(belongsTo, lat, lng);
-      const list = outletsRes.data?.outlets || [];
+      const list =
+        outletsRes.data?.outlets ||
+        (Array.isArray(outletsRes.data) ? outletsRes.data : null) ||
+        outletsRes.outlets ||
+        (Array.isArray(outletsRes) ? outletsRes : null) ||
+        [];
       setOutlets(list);
       const nearest = list.find((o) => o.storeStatus && o.isActive) || list[0];
       if (nearest) setOutlet(nearest);
@@ -102,7 +107,16 @@ export function AppProvider({ children }) {
           DEFAULT_LOCATION.lat,
           DEFAULT_LOCATION.lng
         );
-        const list = outletsRes.data?.outlets || [];
+        // Defensive parse — backend may return outlets in several shapes:
+        // { data: { outlets: [...] } }  |  { data: [...] }  |  { outlets: [...] }  |  [...]
+        const list =
+          outletsRes.data?.outlets ||
+          (Array.isArray(outletsRes.data) ? outletsRes.data : null) ||
+          outletsRes.outlets ||
+          (Array.isArray(outletsRes) ? outletsRes : null) ||
+          [];
+        console.log("[Outlets API] raw response:", outletsRes);
+        console.log("[Outlets API] parsed list:", list, "| count:", list.length);
         setOutlets(list);
 
         // Auto-select outlet

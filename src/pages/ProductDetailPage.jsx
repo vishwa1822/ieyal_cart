@@ -102,15 +102,15 @@ export default function ProductDetailPage() {
       const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
         ? { addressId: savedAddr.id || savedAddr._id }
         : {
-            address1: "Default",
-            address2: "Default",
-            city: "Default",
-            state: "Default",
-            country: "India",
-            pincode: "000000",
-            latitude: 10.777460,
-            longitude: 79.634514
-          };
+          address1: "Default",
+          address2: "Default",
+          city: "Default",
+          state: "Default",
+          country: "India",
+          pincode: "000000",
+          latitude: 10.777460,
+          longitude: 79.634514
+        };
 
       const payload = {
         items: [{
@@ -173,11 +173,10 @@ export default function ProductDetailPage() {
                   <button
                     key={v._id}
                     onClick={() => setSelectedVariation(v)}
-                    className={`flex-1 py-2.5 rounded-btn text-sm font-semibold border-2 transition-all ${
-                      selectedVariation?._id === v._id
+                    className={`flex-1 py-2.5 rounded-btn text-sm font-semibold border-2 transition-all ${selectedVariation?._id === v._id
                         ? "border-primary bg-primary/5 text-primary"
                         : "border-border text-muted"
-                    }`}
+                      }`}
                   >
                     {v.name}
                     <span className="block text-xs font-normal mt-0.5">{formatPrice(v.sellingPrice)}</span>

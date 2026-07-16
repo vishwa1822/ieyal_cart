@@ -186,7 +186,7 @@ export default function HomePage() {
           const qMap = {};
           carts.forEach((cart) => {
             (cart.items || []).forEach((item) => {
-              const id = item.itemId || item._id;
+              const id = item.product_retailer_id || item.itemId || item._id;
               if (id) qMap[id] = (qMap[id] || 0) + (item.quantity || 1);
             });
           });
@@ -255,7 +255,13 @@ export default function HomePage() {
       if (qty <= 0) {
         // Removing item
         if (activeOrderId) {
-          await cartApi.deleteItem({ orderId: activeOrderId, itemId, outletId: outlet._id }, token).catch(() => { });
+          await cartApi.deleteItem({
+            orderId: activeOrderId,
+            itemid: itemId,
+            outletId: outlet._id,
+            customerPhoneNo: rawPhone,
+            customerName: customer?.name || customer?.customerName || ""
+          }, token).catch(() => { });
         }
       } else if (activeOrderId) {
         // Cart exists — always use update (it upserts items, even new ones)
@@ -274,15 +280,15 @@ export default function HomePage() {
         const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
           ? { addressId: savedAddr.id || savedAddr._id }
           : {
-              address1: "Default",
-              address2: "Default",
-              city: "Default",
-              state: "Default",
-              country: "India",
-              pincode: "000000",
-              latitude: 10.777460,
-              longitude: 79.634514
-            };
+            address1: "Default",
+            address2: "Default",
+            city: "Default",
+            state: "Default",
+            country: "India",
+            pincode: "000000",
+            latitude: 10.777460,
+            longitude: 79.634514
+          };
 
         const payload = {
           items: [{ itemId, quantity: qty, variationId: "", addOnDetails: [], currency: "INR" }],
@@ -314,7 +320,7 @@ export default function HomePage() {
         const qMap = {};
         carts.forEach((cart) => {
           (cart.items || []).forEach((item) => {
-            const id = item.itemId || item._id;
+            const id = item.product_retailer_id || item.itemId || item._id;
             if (id) qMap[id] = (qMap[id] || 0) + (item.quantity || 1);
           });
         });

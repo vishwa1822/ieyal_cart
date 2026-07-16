@@ -31,7 +31,7 @@ export const ENDPOINTS = {
     updateAddon: "/cart/update-addon",
     updateVariation: "/cart/update-variation",
     customizeAddon: "/cart/customize-addon",
-    deleteItem: "/cart/delete/item",
+    deleteItem: "/cart/delete",
     updateInstruction: "/cart/update-instruction",
     updateOrderType: "/cart/update-order-type",
   },

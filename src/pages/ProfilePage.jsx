@@ -155,7 +155,7 @@ export default function ProfilePage() {
   return (
     <PageShell title="Profile">
       {/* Desktop: 2-col grid. Mobile: single stack */}
-      <div className="px-4 lg:px-0 pt-4 lg:pt-0 pb-4 max-w-2xl lg:max-w-5xl mx-auto lg:mx-0">
+      <div className="pt-4 lg:pt-0 pb-4">
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-8 lg:items-start space-y-6 lg:space-y-0">
 
           {/* ── LEFT COLUMN ── */}
@@ -249,15 +249,19 @@ export default function ProfilePage() {
               </Card>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 rounded-btn border border-[var(--color-danger)]/25 text-[var(--color-danger)] font-medium text-sm py-3 hover:bg-[var(--color-danger)]/5 hover:-translate-y-0.5 transition-all duration-300"
-            >
-              <LogOut className="h-4 w-4" /> Log out
-            </button>
-
-            <p className="text-center text-xs text-[var(--color-text-faint)] pb-2">OwnCart · v1.0.0</p>
           </div>
+        </div>
+
+        {/* Global Footer Actions */}
+        <div className="mt-12 space-y-4 flex flex-col items-center">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 rounded-btn border border-[var(--color-danger)]/25 text-[var(--color-danger)] font-medium text-sm py-2.5 px-8 hover:bg-[var(--color-danger)]/5 hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <LogOut className="h-4 w-4" /> Log out
+          </button>
+          <p className="text-center text-xs text-[var(--color-text-faint)]">OwnCart · v1.0.0</p>
         </div>
       </div>
 

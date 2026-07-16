@@ -39,9 +39,8 @@ function CartItemRow({ item, onQtyChange, onRemove, updating, selected, onToggle
   return (
     <Card
       hover={!removing}
-      className={`relative flex items-center gap-4 p-3.5 sm:p-4 !shadow-[var(--shadow-xs)] ${
-        removing ? "opacity-30 scale-[0.97]" : selected !== false ? "border-[var(--color-primary)]/35 bg-[var(--color-primary)]/[0.02]" : "opacity-60"
-      }`}
+      className={`relative flex items-center gap-4 p-3.5 sm:p-4 !shadow-[var(--shadow-xs)] ${removing ? "opacity-30 scale-[0.97]" : selected !== false ? "border-[var(--color-primary)]/35 bg-[var(--color-primary)]/[0.02]" : "opacity-60"
+        }`}
     >
       {/* Selection checkbox */}
       <div className="flex items-center self-center pr-0.5">
@@ -80,6 +79,7 @@ function CartItemRow({ item, onQtyChange, onRemove, updating, selected, onToggle
           {/* Qty stepper */}
           <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/[0.04] overflow-hidden transition-colors">
             <button
+              type="button"
               onClick={() => onQtyChange(item, -1)}
               disabled={updating}
               className="p-1.5 hover:bg-[var(--color-primary)]/10 transition-colors disabled:opacity-50"
@@ -99,6 +99,7 @@ function CartItemRow({ item, onQtyChange, onRemove, updating, selected, onToggle
             </span>
 
             <button
+              type="button"
               onClick={() => onQtyChange(item, 1)}
               disabled={updating}
               className="p-1.5 hover:bg-[var(--color-primary)]/10 transition-colors disabled:opacity-50"
@@ -117,6 +118,7 @@ function CartItemRow({ item, onQtyChange, onRemove, updating, selected, onToggle
 
       {/* Trash button */}
       <button
+        type="button"
         onClick={handleRemove}
         disabled={updating || removing}
         className="text-[var(--color-text-faint)] hover:text-[var(--color-danger)] transition-colors self-start p-1 -m-1 disabled:opacity-40"
@@ -159,12 +161,14 @@ export default function CartPage() {
   const [noteSaved, setNoteSaved] = useState(true);
   const noteTimer = useRef(null);
 
+  const customerPhone = customer?.phone || customer?.phoneNo || customer?.mobileNumber || "";
+  const outletId = outlet?._id;
+
   // ── fetchCart — single source of truth ───────────────────────────────
   const fetchCart = useCallback(async () => {
-    const phone = customer?.phone || customer?.phoneNo || customer?.mobileNumber || "";
-    if (!phone || !outlet?._id) return;
+    if (!customerPhone || !outletId) return;
     try {
-      const res = await cartApi.getDetails(phone, outlet._id, token);
+      const res = await cartApi.getDetails(customerPhone, outletId, token);
       // Use shared parser — handles all API response shapes
       const carts = extractCarts(res);
 
@@ -187,11 +191,14 @@ export default function CartPage() {
             0;
           const lineQty = item.quantity || 1;
           allItems.push({
-            id: item.itemId || item._id, // Product item ID for updates
+            id: item._id || item.cartRowId || item.product_retailer_id || item.itemId, // Unique row ID for React key and selection
+            productId: item.product_retailer_id || item.itemId, // Actual item ID for backend payload
             cartRowId: item._id || item.itemId, // Cart item row _id
             orderId: cart.orderId || cart._id,
             name: item.itemName || item.name || "Item",
             variation: item.variationName || item.variantName || "",
+            variationId: item.variationId || "",
+            addOnDetails: item.addOnDetails || [],
             addons: (item.addOnDetails || [])
               .map((a) => a.name || a.addon_item_name || a.addonName)
               .filter(Boolean)
@@ -219,19 +226,21 @@ export default function CartPage() {
       setFetchError(err?.message || "Could not load your cart.");
       setItems([]);
     }
-  }, [customer, outlet, token, setCartCount]);
+  }, [customerPhone, outletId, token, setCartCount]);
 
   // Initial load
   useEffect(() => {
-    const phone = customer?.phone || customer?.phoneNo || customer?.mobileNumber || "";
     if (!isLoggedIn) { setLoading(false); return; }
-    if (!phone || !outlet?._id) { setLoading(false); return; }
+    if (!customerPhone || !outletId) { setLoading(false); return; }
+
     (async () => {
-      setLoading(true);
+      // Don't show skeleton if we already have data
+      setLoading(prev => items.length === 0 ? true : prev);
       await fetchCart();
       setLoading(false);
     })();
-  }, [isLoggedIn, customer, outlet, token, fetchCart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, customerPhone, outletId, token, fetchCart]);
 
   // ── updateQty — optimistic + re-sync ─────────────────────────────────
   const updateQty = async (item, delta) => {
@@ -255,17 +264,27 @@ export default function CartPage() {
         await cartApi.update(
           {
             orderId: item.orderId,
-            items: [{ itemId: item.id, quantity: newQty }],
+            items: [{
+              itemId: item.productId,
+              quantity: newQty,
+              variationId: item.variationId || "",
+              addOnDetails: item.addOnDetails || []
+            }],
             outletId: outlet._id,
           },
           token
         );
       } catch (err) {
-        if (item.cartRowId && item.cartRowId !== item.id) {
+        if (item.cartRowId && item.cartRowId !== item.productId) {
           await cartApi.update(
             {
               orderId: item.orderId,
-              items: [{ itemId: item.cartRowId, quantity: newQty }],
+              items: [{
+                itemId: item.cartRowId,
+                quantity: newQty,
+                variationId: item.variationId || "",
+                addOnDetails: item.addOnDetails || []
+              }],
               outletId: outlet._id,
             },
             token
@@ -298,16 +317,23 @@ export default function CartPage() {
     try {
       try {
         await cartApi.deleteItem(
-          { orderId: item.orderId, itemId: item.id, outletId: outlet._id },
+          {
+            outletId: outletId,
+            orderId: item.orderId,
+            itemid: item.cartRowId,
+            customerPhoneNo: customerPhone,
+            customerName: customer?.name || ""
+          },
           token
         );
       } catch (err) {
-        if (item.cartRowId && item.cartRowId !== item.id) {
-          await cartApi.deleteItem(
-            { orderId: item.orderId, itemId: item.cartRowId, outletId: outlet._id },
-            token
-          );
+        const errorMsg = err?.message || err?.data?.message || "";
+        if (errorMsg.includes("No cart found to delete") || errorMsg.includes("Order not found")) {
+          // The order/cart is already gone on the server.
+          // Auto refresh the cart state to sync.
+          await fetchCart();
         } else {
+          // If it's a real failure, throw to trigger revert.
           throw err;
         }
       }
@@ -317,6 +343,7 @@ export default function CartPage() {
       // Revert
       setItems(snapshot);
       setCartCount((c) => c + item.qty);
+      alert("Unable to delete item. Please try again.");
     } finally {
       setUpdatingId(null);
     }
@@ -340,15 +367,22 @@ export default function CartPage() {
       for (const item of toRemove) {
         try {
           await cartApi.deleteItem(
-            { orderId: item.orderId, itemId: item.id, outletId: outlet._id },
+            {
+              outletId: outletId,
+              orderId: item.orderId,
+              itemid: item.cartRowId,
+              customerPhoneNo: customerPhone,
+              customerName: customer?.name || ""
+            },
             token
           );
-        } catch {
-          if (item.cartRowId && item.cartRowId !== item.id) {
-            await cartApi.deleteItem(
-              { orderId: item.orderId, itemId: item.cartRowId, outletId: outlet._id },
-              token
-            ).catch(() => { });
+        } catch (err) {
+          const errorMsg = err?.message || err?.data?.message || "";
+          if (errorMsg.includes("No cart found to delete") || errorMsg.includes("Order not found")) {
+            // Whole cart is gone, no need to keep deleting items
+            break;
+          } else {
+            throw err;
           }
         }
       }
@@ -356,6 +390,7 @@ export default function CartPage() {
     } catch {
       setItems(snapshot);
       setCartCount(snapshot.reduce((s, it) => s + it.qty, 0));
+      alert("Unable to clear items. Please try again.");
     } finally {
       setUpdatingId(null);
     }
@@ -531,6 +566,7 @@ export default function CartPage() {
                 <span className="text-sm text-[var(--color-text-muted)]">{itemCount} item{itemCount !== 1 ? "s" : ""} selected</span>
                 {items.length > 0 && (
                   <button
+                    type="button"
                     onClick={() => removeAllItems(false)}
                     disabled={updatingId !== null}
                     className="text-xs font-semibold text-[var(--color-danger)] hover:underline disabled:opacity-40 flex items-center gap-1"
@@ -660,7 +696,7 @@ export default function CartPage() {
                 >
                   {itemCount > 0 ? `Proceed to checkout · ${formatPrice(total)}` : "Select items to checkout"}
                 </Button>
-                
+
                 <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--color-text-faint)] pt-1">
                   <Lock className="h-3.5 w-3.5 shrink-0" />
                   <span>Secure payments. 100% safe & trusted.</span>
@@ -698,6 +734,7 @@ export default function CartPage() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 glass border-t border-[var(--color-border)] px-4 py-3 safe-area-pb">
         {!allSelected && items.length > 0 && selectedItemsList.length < items.length && (
           <button
+            type="button"
             onClick={() => removeAllItems(true)}
             disabled={updatingId !== null}
             className="w-full text-center text-xs font-semibold text-[var(--color-danger)] mb-2 hover:underline"
