@@ -161,7 +161,7 @@ export default function ProfilePage() {
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-6">
             {/* Hero identity card */}
-            <div ref={heroRef} className="iy-reveal relative overflow-hidden rounded-[28px] border border-white/60 p-5 lg:p-6 shadow-[0_20px_40px_-16px_rgba(251,160,139,0.3)]">
+            <div ref={heroRef} className="iy-reveal relative overflow-hidden rounded-[28px] border border-white/60 p-5 lg:p-6 shadow-[0_10px_25px_-10px_rgba(0,0,0,0.05)]">
               {/* Wavy Background Layers */}
               <div className="absolute inset-0 pointer-events-none select-none z-0">
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
