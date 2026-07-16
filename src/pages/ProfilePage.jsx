@@ -6,7 +6,7 @@ import {
 } from "@/components/ui";
 import {
   MapPin, ShoppingBag, LogOut, ChevronRight, Store, CreditCard,
-  Gift, Wallet, Pencil, ShieldCheck, HelpCircle, Bell, MessageSquareText, Megaphone,
+  Gift, Wallet, Pencil, ShieldCheck, HelpCircle, Bell, MessageSquareText, Megaphone, Phone,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { PageShell } from "@/components/layout/AppShell";
@@ -161,39 +161,49 @@ export default function ProfilePage() {
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-6">
             {/* Hero identity card */}
-            <div ref={heroRef} className="iy-reveal relative overflow-hidden rounded-card lg:rounded-lg2 gradient-hero text-white p-5 lg:p-7 shadow-premium">
-              <div className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-white/15 backdrop-blur ring-2 ring-white/25 flex items-center justify-center text-xl font-bold shrink-0">
-                  {initials || "U"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-lg font-bold truncate">{displayName}</p>
-                  <p className="text-sm text-white/70 tabular-nums">+91 {phone}</p>
+            <div ref={heroRef} className="iy-reveal relative overflow-hidden rounded-[28px] border border-white/60 p-5 lg:p-6 shadow-[0_20px_40px_-16px_rgba(251,160,139,0.3)]" style={{ background: "linear-gradient(135deg, #FCF5EE 0%, #FEECE2 40%, #FFD2BE 75%, #FBA08B 100%)" }}>
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="h-[72px] w-[72px] rounded-full bg-gradient-to-br from-white/90 to-[#FFE9DF]/95 backdrop-blur-sm border-2 border-white/80 flex items-center justify-center shrink-0 shadow-[0_8px_20px_-6px_rgba(251,160,139,0.35)]">
+                    <span className="font-display text-2xl font-bold text-[#8A3A25]">{initials || "U"}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display text-xl sm:text-[22px] font-bold text-[#4E392F] tracking-tight leading-tight">{displayName}</p>
+                    <p className="flex items-center gap-1.5 text-sm text-[#8C7A70]/90 font-semibold mt-2 tabular-nums">
+                      <Phone className="h-3.5 w-3.5 text-[#8A3A25] shrink-0" />
+                      +91 {phone}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setEditOpen(true)}
-                  className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors shrink-0"
+                  className="h-10 w-10 rounded-full bg-white/60 backdrop-blur-md border border-white/60 hover:bg-white/80 flex items-center justify-center transition-colors shrink-0 shadow-[0_4px_12px_-3px_rgba(251,160,139,0.2)]"
                   aria-label="Edit profile"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-[18px] w-[18px] text-[#8A3A25]" />
                 </button>
               </div>
+
               {/* Stat tiles */}
-              <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-btn bg-white/10 backdrop-blur px-4 py-3">
-                  <div className="flex items-center gap-1.5 text-white/70">
-                    <Gift className="h-3.5 w-3.5" />
-                    <span className="text-xs font-medium">Reward points</span>
+              <div className="relative z-10 mt-6 grid grid-cols-2 gap-4">
+                <div className="rounded-2xl bg-white/40 backdrop-blur-[12px] border border-white/50 px-4 py-3 flex items-center gap-3.5 shadow-[0_8px_16px_-6px_rgba(34,26,20,0.04)]">
+                  <div className="h-11 w-11 rounded-[14px] bg-[#FFF0E8] border border-white/60 flex items-center justify-center shrink-0 shadow-[0_4px_12px_-3px_rgba(251,160,139,0.15)]">
+                    <Gift className="h-5 w-5 text-[#8A3A25]" />
                   </div>
-                  <p className="text-lg font-bold mt-1 tabular-nums">240</p>
+                  <div className="min-w-0">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8C7A70]/90">Reward points</span>
+                    <p className="text-lg font-bold text-[#4E392F] leading-none mt-0.5 tabular-nums">240</p>
+                  </div>
                 </div>
-                <div className="rounded-btn bg-white/10 backdrop-blur px-4 py-3">
-                  <div className="flex items-center gap-1.5 text-white/70">
-                    <Wallet className="h-3.5 w-3.5" />
-                    <span className="text-xs font-medium">Wallet balance</span>
+                
+                <div className="rounded-2xl bg-white/40 backdrop-blur-[12px] border border-white/50 px-4 py-3 flex items-center gap-3.5 shadow-[0_8px_16px_-6px_rgba(34,26,20,0.04)]">
+                  <div className="h-11 w-11 rounded-[14px] bg-[#FFF0E8] border border-white/60 flex items-center justify-center shrink-0 shadow-[0_4px_12px_-3px_rgba(251,160,139,0.15)]">
+                    <Wallet className="h-5 w-5 text-[#8A3A25]" />
                   </div>
-                  <p className="text-lg font-bold mt-1 tabular-nums">₹0</p>
+                  <div className="min-w-0">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8C7A70]/90">Wallet balance</span>
+                    <p className="text-lg font-bold text-[#4E392F] leading-none mt-0.5 tabular-nums">₹0</p>
+                  </div>
                 </div>
               </div>
             </div>
