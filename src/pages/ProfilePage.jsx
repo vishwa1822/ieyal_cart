@@ -166,32 +166,48 @@ export default function ProfilePage() {
               <div className="absolute inset-0 pointer-events-none select-none z-0">
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <defs>
+                    {/* Ivory & Soft Peach Base */}
                     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FFF9F6" />
-                      <stop offset="45%" stopColor="#FEECE2" />
-                      <stop offset="100%" stopColor="#FFDACB" />
+                      <stop offset="0%" stopColor="#FFFDFB" />
+                      <stop offset="50%" stopColor="#FFF1EA" />
+                      <stop offset="100%" stopColor="#FFE0D3" />
                     </linearGradient>
-                    <linearGradient id="yellowWave" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#FFFBF0" stopOpacity="0.3" />
-                      <stop offset="40%" stopColor="#FFE082" stopOpacity="0.8" />
-                      <stop offset="75%" stopColor="#FFB300" stopOpacity="0.95" />
-                      <stop offset="100%" stopColor="#FF8F00" stopOpacity="0.0" />
-                    </linearGradient>
-                    <linearGradient id="coralWave" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#FFF0EB" stopOpacity="0.1" />
-                      <stop offset="45%" stopColor="#FFB39E" stopOpacity="0.75" />
-                      <stop offset="80%" stopColor="#FA7D61" stopOpacity="0.95" />
-                      <stop offset="100%" stopColor="#E04F30" stopOpacity="1" />
-                    </linearGradient>
+                    
+                    {/* Royal Gold/Honey Glow */}
+                    <radialGradient id="honeyGlow" cx="15%" cy="85%" r="60%">
+                      <stop offset="0%" stopColor="#FCD37B" stopOpacity="0.75" />
+                      <stop offset="40%" stopColor="#F9BC50" stopOpacity="0.45" />
+                      <stop offset="80%" stopColor="#E29E4B" stopOpacity="0.1" />
+                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                    </radialGradient>
+
+                    {/* Luxurious Rose Gold/Coral Glow */}
+                    <radialGradient id="roseGlow" cx="85%" cy="85%" r="65%">
+                      <stop offset="0%" stopColor="#FF9B85" stopOpacity="0.85" />
+                      <stop offset="35%" stopColor="#FC7C65" stopOpacity="0.55" />
+                      <stop offset="70%" stopColor="#F5573C" stopOpacity="0.18" />
+                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                    </radialGradient>
+
+                    {/* Soft Champagne Highlight (Top Right) */}
+                    <radialGradient id="champagneGlow" cx="80%" cy="15%" r="50%">
+                      <stop offset="0%" stopColor="#FFF2E8" stopOpacity="0.85" />
+                      <stop offset="50%" stopColor="#FFE1D0" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                    </radialGradient>
+
+                    <filter id="blurEffect" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="9" />
+                    </filter>
                   </defs>
-                  {/* Base background */}
+                  
+                  {/* Base Background Rect */}
                   <rect width="100" height="100" fill="url(#bgGrad)" />
                   
-                  {/* Wave 1 (Royal Yellow Layer on left/middle) */}
-                  <path d="M 0 100 L 0 52 C 25 45, 55 80, 100 62 L 100 100 Z" fill="url(#yellowWave)" />
-                  
-                  {/* Wave 2 (Coral Layer on right/bottom) */}
-                  <path d="M 0 100 C 35 98, 60 58, 100 38 L 100 100 Z" fill="url(#coralWave)" />
+                  {/* Glowing Blobs overlapping with Blur */}
+                  <circle cx="15" cy="85" r="45" fill="url(#honeyGlow)" filter="url(#blurEffect)" />
+                  <circle cx="85" cy="85" r="48" fill="url(#roseGlow)" filter="url(#blurEffect)" />
+                  <circle cx="80" cy="15" r="35" fill="url(#champagneGlow)" filter="url(#blurEffect)" />
                 </svg>
               </div>
               <div className="relative z-10 flex items-center justify-between gap-4">
