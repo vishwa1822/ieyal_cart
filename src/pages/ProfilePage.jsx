@@ -161,7 +161,39 @@ export default function ProfilePage() {
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-6">
             {/* Hero identity card */}
-            <div ref={heroRef} className="iy-reveal relative overflow-hidden rounded-[28px] border border-white/60 p-5 lg:p-6 shadow-[0_20px_40px_-16px_rgba(251,160,139,0.3)]" style={{ background: "linear-gradient(135deg, #FCF5EE 0%, #FEECE2 40%, #FFD2BE 75%, #FBA08B 100%)" }}>
+            <div ref={heroRef} className="iy-reveal relative overflow-hidden rounded-[28px] border border-white/60 p-5 lg:p-6 shadow-[0_20px_40px_-16px_rgba(251,160,139,0.3)]">
+              {/* Wavy Background Layers */}
+              <div className="absolute inset-0 pointer-events-none select-none z-0">
+                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FFF9F6" />
+                      <stop offset="45%" stopColor="#FEECE2" />
+                      <stop offset="100%" stopColor="#FFDACB" />
+                    </linearGradient>
+                    <linearGradient id="yellowWave" x1="0%" y1="100%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#FFFBF0" stopOpacity="0.3" />
+                      <stop offset="40%" stopColor="#FFE082" stopOpacity="0.8" />
+                      <stop offset="75%" stopColor="#FFB300" stopOpacity="0.95" />
+                      <stop offset="100%" stopColor="#FF8F00" stopOpacity="0.0" />
+                    </linearGradient>
+                    <linearGradient id="coralWave" x1="0%" y1="100%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#FFF0EB" stopOpacity="0.1" />
+                      <stop offset="45%" stopColor="#FFB39E" stopOpacity="0.75" />
+                      <stop offset="80%" stopColor="#FA7D61" stopOpacity="0.95" />
+                      <stop offset="100%" stopColor="#E04F30" stopOpacity="1" />
+                    </linearGradient>
+                  </defs>
+                  {/* Base background */}
+                  <rect width="100" height="100" fill="url(#bgGrad)" />
+                  
+                  {/* Wave 1 (Royal Yellow Layer on left/middle) */}
+                  <path d="M 0 100 L 0 52 C 25 45, 55 80, 100 62 L 100 100 Z" fill="url(#yellowWave)" />
+                  
+                  {/* Wave 2 (Coral Layer on right/bottom) */}
+                  <path d="M 0 100 C 35 98, 60 58, 100 38 L 100 100 Z" fill="url(#coralWave)" />
+                </svg>
+              </div>
               <div className="relative z-10 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="h-[72px] w-[72px] rounded-full bg-gradient-to-br from-white/90 to-[#FFE9DF]/95 backdrop-blur-sm border-2 border-white/80 flex items-center justify-center shrink-0 shadow-[0_8px_20px_-6px_rgba(251,160,139,0.35)]">
