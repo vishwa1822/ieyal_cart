@@ -169,30 +169,22 @@ export default function ProfilePage() {
                     {/* Ivory & Soft Peach Base */}
                     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#FFFDFB" />
-                      <stop offset="50%" stopColor="#FFF1EA" />
-                      <stop offset="100%" stopColor="#FFE0D3" />
+                      <stop offset="50%" stopColor="#FFF4ED" />
+                      <stop offset="100%" stopColor="#FFE3D7" />
                     </linearGradient>
                     
-                    {/* Royal Gold/Honey Glow */}
-                    <radialGradient id="honeyGlow" cx="15%" cy="85%" r="60%">
-                      <stop offset="0%" stopColor="#FCD37B" stopOpacity="0.75" />
-                      <stop offset="40%" stopColor="#F9BC50" stopOpacity="0.45" />
-                      <stop offset="80%" stopColor="#E29E4B" stopOpacity="0.1" />
+                    {/* Upper Diagonal - Very Light Champagne/White Glow */}
+                    <radialGradient id="lightGlow" cx="20%" cy="20%" r="65%">
+                      <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+                      <stop offset="50%" stopColor="#FFFDFB" stopOpacity="0.6" />
                       <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
                     </radialGradient>
 
-                    {/* Luxurious Rose Gold/Coral Glow */}
-                    <radialGradient id="roseGlow" cx="85%" cy="85%" r="65%">
+                    {/* Lower Diagonal - Luxurious Rose Gold/Coral Glow */}
+                    <radialGradient id="roseGlow" cx="90%" cy="90%" r="70%">
                       <stop offset="0%" stopColor="#FF9B85" stopOpacity="0.85" />
-                      <stop offset="35%" stopColor="#FC7C65" stopOpacity="0.55" />
-                      <stop offset="70%" stopColor="#F5573C" stopOpacity="0.18" />
-                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-                    </radialGradient>
-
-                    {/* Soft Champagne Highlight (Top Right) */}
-                    <radialGradient id="champagneGlow" cx="80%" cy="15%" r="50%">
-                      <stop offset="0%" stopColor="#FFF2E8" stopOpacity="0.85" />
-                      <stop offset="50%" stopColor="#FFE1D0" stopOpacity="0.35" />
+                      <stop offset="40%" stopColor="#FC7C65" stopOpacity="0.5" />
+                      <stop offset="80%" stopColor="#F5573C" stopOpacity="0.1" />
                       <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
                     </radialGradient>
 
@@ -205,9 +197,8 @@ export default function ProfilePage() {
                   <rect width="100" height="100" fill="url(#bgGrad)" />
                   
                   {/* Glowing Blobs overlapping with Blur */}
-                  <circle cx="15" cy="85" r="45" fill="url(#honeyGlow)" filter="url(#blurEffect)" />
-                  <circle cx="85" cy="85" r="48" fill="url(#roseGlow)" filter="url(#blurEffect)" />
-                  <circle cx="80" cy="15" r="35" fill="url(#champagneGlow)" filter="url(#blurEffect)" />
+                  <circle cx="20" cy="20" r="50" fill="url(#lightGlow)" filter="url(#blurEffect)" />
+                  <circle cx="90" cy="90" r="55" fill="url(#roseGlow)" filter="url(#blurEffect)" />
                 </svg>
               </div>
               <div className="relative z-10 flex items-center justify-between gap-4">
