@@ -13,6 +13,7 @@ import SectionDivider from "@/components/shared/SectionDivider";
 import { formatPrice } from "@/lib/theme";
 import { cartApi, extractCarts } from "@/lib/api/services";
 import useReveal from "@/hooks/useReveal";
+import { motion } from "framer-motion";
 
 /* ────────────────────────────────────────────────────────────────────────
    HomePage — the authenticated Home experience.
@@ -383,7 +384,11 @@ export default function HomePage() {
           />
 
           {/* Offers Banner */}
-          <div ref={heroRef} className="iy-reveal">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+          >
             {loading ? (
               <div className="rounded-3xl overflow-hidden shadow-[var(--iy-shadow-xs)]">
                 <BannerSkeleton />
@@ -404,7 +409,7 @@ export default function HomePage() {
                 </p>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Offers strip */}
           {discounts?.length > 0 && (
