@@ -385,9 +385,9 @@ export default function HomePage() {
 
           {/* Offers Banner */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 70, damping: 14, mass: 0.8, delay: 0.05 }}
           >
             {loading ? (
               <div className="rounded-3xl overflow-hidden shadow-[var(--iy-shadow-xs)]">
