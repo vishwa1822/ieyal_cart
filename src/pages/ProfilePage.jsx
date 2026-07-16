@@ -173,10 +173,10 @@ export default function ProfilePage() {
                       <stop offset="100%" stopColor="#FFE3D7" />
                     </linearGradient>
                     
-                    {/* Upper Diagonal - Very Light Champagne/White Glow */}
-                    <radialGradient id="lightGlow" cx="20%" cy="20%" r="65%">
-                      <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-                      <stop offset="50%" stopColor="#FFFDFB" stopOpacity="0.6" />
+                    {/* Upper Diagonal - Soft Terracotta Brand Color Glow */}
+                    <radialGradient id="brandGlow" cx="15%" cy="15%" r="65%">
+                      <stop offset="0%" stopColor="#A6412B" stopOpacity="0.14" />
+                      <stop offset="40%" stopColor="#FFE5DF" stopOpacity="0.3" />
                       <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
                     </radialGradient>
 
@@ -197,7 +197,7 @@ export default function ProfilePage() {
                   <rect width="100" height="100" fill="url(#bgGrad)" />
                   
                   {/* Glowing Blobs overlapping with Blur */}
-                  <circle cx="20" cy="20" r="50" fill="url(#lightGlow)" filter="url(#blurEffect)" />
+                  <circle cx="15" cy="15" r="50" fill="url(#brandGlow)" filter="url(#blurEffect)" />
                   <circle cx="90" cy="90" r="55" fill="url(#roseGlow)" filter="url(#blurEffect)" />
                 </svg>
               </div>
