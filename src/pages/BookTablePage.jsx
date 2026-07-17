@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, Button, Label, Separator } from "@/components/ui";
-import { CalendarDays, Clock, Users, CheckCircle2, MessageSquare, Utensils, Sparkles, Phone, User, Star, ShieldCheck, ArrowRight, CalendarPlus } from "lucide-react";
+import { CalendarDays, Clock, Users, CheckCircle2, MessageSquare, Utensils, Sparkles, Phone, User, Star, ShieldCheck, ArrowRight, CalendarPlus, ChevronDown, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import useReveal from "@/hooks/useReveal";
 import SectionDivider from "@/components/shared/SectionDivider";
@@ -50,6 +50,44 @@ export default function BookTablePage() {
   const [phone, setPhone] = useState(customer?.phone || "");
   const [note, setNote] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const [duration, setDuration] = useState("");
+  const [durationOpen, setDurationOpen] = useState(false);
+
+  const DURATION_OPTIONS = [
+    { label: "30 Minutes", minutes: 30 },
+    { label: "45 Minutes", minutes: 45 },
+    { label: "1 Hour",    minutes: 60 },
+    { label: "1.5 Hours", minutes: 90 },
+    { label: "2.5 Hours", minutes: 150 },
+  ];
+
+  // Compute "Ends At" from selected time + duration
+  const computeEndsAt = (startTime, durationLabel) => {
+    if (!startTime || !durationLabel) return null;
+    const opt = DURATION_OPTIONS.find(o => o.label === durationLabel);
+    if (!opt) return null;
+    // Parse 12-hour time string like "1:30 PM" or "12:00 AM" (also handles custom HH:MM)
+    let hours = 0, mins = 0;
+    const ampm = startTime.match(/([AP]M)$/i);
+    if (ampm) {
+      const [hPart, mPart] = startTime.replace(/\s?[AP]M$/i, "").split(":");
+      hours = parseInt(hPart, 10) % 12 + (ampm[1].toUpperCase() === "PM" ? 12 : 0);
+      mins = parseInt(mPart || 0, 10);
+    } else {
+      const [hPart, mPart] = startTime.split(":");
+      hours = parseInt(hPart, 10);
+      mins = parseInt(mPart || 0, 10);
+    }
+    const totalMins = hours * 60 + mins + opt.minutes;
+    const endH = Math.floor(totalMins / 60) % 24;
+    const endM = totalMins % 60;
+    const period = endH >= 12 ? "PM" : "AM";
+    const displayH = endH % 12 === 0 ? 12 : endH % 12;
+    const displayM = String(endM).padStart(2, "0");
+    return `${displayH}:${displayM} ${period}`;
+  };
+
+  const endsAt = computeEndsAt(time, duration);
 
   const minDateStr = days[0].toISOString().slice(0, 10);
 
@@ -262,6 +300,48 @@ export default function BookTablePage() {
                           </button>
                         );
                       })}
+
+                      {/* 8th slot: Duration dropdown — styled identically to time slot buttons */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setDurationOpen(o => !o)}
+                          className={`relative w-full py-2 rounded-xl border text-xs sm:text-sm font-medium transition-all duration-300 active:scale-[0.97] flex items-center justify-center gap-1 ${
+                            duration
+                              ? "bg-[var(--iy-accent)] text-white border-[var(--iy-accent)] shadow-[var(--iy-shadow-xs)]"
+                              : "border-[var(--iy-border)] bg-[var(--iy-bg)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/50 hover:text-[var(--iy-ink)]"
+                          }`}
+                        >
+                          <span className="relative truncate">{duration || "Duration"}</span>
+                          <ChevronDown className={`relative h-3 w-3 shrink-0 transition-transform duration-200 ${durationOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {durationOpen && (
+                          <div
+                            className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-xl border border-[var(--iy-border)] bg-[var(--iy-surface)] shadow-[var(--iy-shadow-md)] overflow-hidden"
+                            style={{ minWidth: "10rem" }}
+                          >
+                            {DURATION_OPTIONS.map((opt) => (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => { setDuration(opt.label); setDurationOpen(false); }}
+                                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-colors duration-150 ${
+                                  duration === opt.label
+                                    ? "bg-[var(--iy-accent)]/10 text-[var(--iy-accent)]"
+                                    : "text-[var(--iy-ink-soft)] hover:bg-[var(--iy-bg)] hover:text-[var(--iy-ink)]"
+                                }`}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <Clock className="h-3.5 w-3.5 text-[var(--iy-accent)]/70 shrink-0" />
+                                  {opt.label}
+                                </span>
+                                {duration === opt.label && <Check className="h-3.5 w-3.5 text-[var(--iy-accent)]" />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -429,6 +509,42 @@ export default function BookTablePage() {
                         className={time ? "font-bold text-[var(--iy-accent)]" : "text-[var(--iy-ink-soft)] italic"}
                       >
                         {time || "Choose time"}
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-[var(--iy-ink-soft)] flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-[var(--iy-ink-soft)]" /> Duration
+                    </span>
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={duration || "no-duration"}
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.18 }}
+                        className={duration ? "font-medium text-[var(--iy-ink)]" : "text-[var(--iy-ink-soft)] italic"}
+                      >
+                        {duration || "Not selected"}
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-[var(--iy-ink-soft)] flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-[var(--iy-ink-soft)]" /> Ends At
+                    </span>
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={endsAt || "no-ends"}
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.18 }}
+                        className={endsAt ? "font-bold text-[var(--iy-accent)]" : "text-[var(--iy-ink-soft)] italic"}
+                      >
+                        {endsAt || "—"}
                       </motion.span>
                     </AnimatePresence>
                   </div>
