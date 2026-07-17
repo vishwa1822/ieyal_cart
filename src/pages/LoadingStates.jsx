@@ -7,15 +7,33 @@ import { Loader2 } from "lucide-react";
 // banner/get-active, customer profile session, cart/get-cart-details).
 // ===========================================================================
 
+export function ProductCardSkeleton() {
+  return (
+    <div className="flex lg:flex-col gap-3 lg:gap-0 p-3 lg:p-4 rounded-2xl lg:rounded-[var(--radius-card)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-xs)] overflow-hidden">
+      <Skeleton className="h-20 w-20 lg:h-40 lg:w-full rounded-xl lg:rounded-none shrink-0" />
+      <div className="flex-1 min-w-0 flex flex-col justify-between pt-1 lg:pt-3">
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-3.5 w-3.5 rounded-full shrink-0" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-4/5" />
+        </div>
+        <div className="flex justify-between items-center mt-3">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-8 w-16 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProductGridSkeleton({ count = 6 }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-5">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="space-y-2">
-          <Skeleton className="h-28 w-full rounded-md" />
-          <Skeleton className="h-3 w-3/4" />
-          <Skeleton className="h-3 w-1/2" />
-        </div>
+        <ProductCardSkeleton key={i} />
       ))}
     </div>
   );
@@ -48,7 +66,15 @@ export function CartSkeleton() {
 }
 
 export function BannerSkeleton() {
-  return <Skeleton className="h-32 w-full rounded-md" />;
+  return (
+    <div className="relative rounded-3xl overflow-hidden bg-border/40 p-6 lg:p-10 shadow-[var(--iy-shadow-xs)] w-full h-36 lg:h-64 flex flex-col justify-between animate-pulse">
+      <div className="space-y-3">
+        <div className="h-6 w-6 rounded-full bg-border/80" />
+        <div className="h-6 lg:h-8 w-1/3 bg-border/80 rounded" />
+        <div className="h-4 lg:h-5 w-2/3 bg-border/80 rounded" />
+      </div>
+    </div>
+  );
 }
 
 export function ProfileSkeleton() {

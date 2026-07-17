@@ -136,6 +136,10 @@ export const cartApi = {
   // POST /cart/update-order-type  { orderId, orderType, outletId }
   updateOrderType: (payload, token) =>
     apiRequest(ENDPOINTS.cart.updateOrderType, { body: payload, token }),
+
+  // POST /cart/order-checkout { orderId, outletId, customerPhoneNo }
+  checkout: (payload, token) =>
+    apiRequest(ENDPOINTS.cart.checkout, { body: payload, token }),
 };
 
 // ── Discount ──────────────────────────────────────────────────────────────

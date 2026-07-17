@@ -5,6 +5,7 @@ import {
   bannerApi,
   productApi,
   discountApi,
+  extractCarts,
 } from "@/lib/api/services";
 import {
   applyTheme,
@@ -36,6 +37,63 @@ export function AppProvider({ children }) {
   const [categories, setCategories] = useState([]);
   const [discounts, setDiscounts] = useState([]);
   const [cartCount, setCartCount] = useState(0);
+  const [cartData, setCartData] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [activeOrderId, setActiveOrderId] = useState(null);
+  const [quantities, setQuantities] = useState({});
+
+  const updateCartFromCarts = useCallback((carts) => {
+    const firstCart = carts?.[0];
+    if (firstCart) {
+      setActiveOrderId(firstCart.orderId || firstCart._id);
+      const qMap = {};
+      const allItems = [];
+      carts.forEach((cart) => {
+        (cart.items || []).forEach((item) => {
+          const id = item.product_retailer_id || item.itemId || item._id;
+          if (id) qMap[id] = (qMap[id] || 0) + (item.quantity || 1);
+
+          const unitPrice =
+            item.itemPrice ??
+            item.sellingPrice ??
+            item.price ??
+            item.rate ??
+            item.basePrice ??
+            item.mrp ??
+            0;
+          const lineQty = item.quantity || 1;
+          allItems.push({
+            id: item._id || item.cartRowId || item.product_retailer_id || item.itemId,
+            productId: item.product_retailer_id || item.itemId,
+            cartRowId: item._id || item.itemId,
+            orderId: cart.orderId || cart._id,
+            name: item.itemName || item.name || "Item",
+            variation: item.variationName || item.variantName || "",
+            variationId: item.variationId || "",
+            addOnDetails: item.addOnDetails || [],
+            addons: (item.addOnDetails || [])
+              .map((a) => a.name || a.addon_item_name || a.addonName)
+              .filter(Boolean)
+              .join(", "),
+            qty: lineQty,
+            price: unitPrice,
+            total: item.itemTotal ?? item.lineTotal ?? item.amount ?? (unitPrice * lineQty),
+            image: item.itemImage || item.image || null,
+          });
+        });
+      });
+      setCartItems(allItems);
+      setCartData(carts);
+      setQuantities(qMap);
+      setCartCount(allItems.reduce((s, it) => s + it.qty, 0));
+    } else {
+      setActiveOrderId(null);
+      setCartItems([]);
+      setCartData(null);
+      setQuantities({});
+      setCartCount(0);
+    }
+  }, [setCartCount]);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null); // { lat, lng, source }
 
@@ -85,6 +143,10 @@ export function AppProvider({ children }) {
     setToken(null);
     setCustomer(null);
     setCartCount(0);
+    setCartData(null);
+    setCartItems([]);
+    setActiveOrderId(null);
+    setQuantities({});
   }, []);
 
   // Boot: Get Organization → Get Outlets
@@ -194,6 +256,15 @@ export function AppProvider({ children }) {
     cartCount,
     setCartCount,
     belongsTo,
+    cartData,
+    setCartData,
+    cartItems,
+    setCartItems,
+    activeOrderId,
+    setActiveOrderId,
+    quantities,
+    setQuantities,
+    updateCartFromCarts,
     error,
     orgName: org?.organization?.name || "OwnCart",
     orgLogo: org?.organization?.logoImage,

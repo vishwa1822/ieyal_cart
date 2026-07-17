@@ -145,11 +145,13 @@ function BillRow({ label, value, success, bold }) {
 // ── Main page ─────────────────────────────────────────────────────────────
 export default function CartPage() {
   const navigate = useNavigate();
-  const { customer, outlet, token, setCartCount, isLoggedIn } = useApp();
+  const {
+    customer, outlet, token, setCartCount, isLoggedIn,
+    cartData, setCartData, cartItems: items, setCartItems: setItems,
+    updateCartFromCarts
+  } = useApp();
 
-  // ── State ──────────────────────────────────────────────────────────────
-  const [cartData, setCartData] = useState(null);  // raw array from API
-  const [items, setItems] = useState([]);
+  // Shared cart states managed by AppContext
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [updatingId, setUpdatingId] = useState(null); // item id being mutated
@@ -157,6 +159,8 @@ export default function CartPage() {
   const [coupon, setCoupon] = useState("");
   const [couponState, setCouponState] = useState(null); // { ok, msg }
   const [couponLoading, setCouponLoading] = useState(false);
+  const [availableDiscounts, setAvailableDiscounts] = useState([]);
+  const [discountsLoading, setDiscountsLoading] = useState(false);
   const [note, setNote] = useState("");
   const [noteSaved, setNoteSaved] = useState(true);
   const noteTimer = useRef(null);
@@ -171,48 +175,20 @@ export default function CartPage() {
       const res = await cartApi.getDetails(customerPhone, outletId, token);
       // Use shared parser — handles all API response shapes
       const carts = extractCarts(res);
+      updateCartFromCarts(carts);
 
-      setCartData(carts);
       // Seed note from first cart
       setNote(carts?.[0]?.instruction || "");
 
-      // Flatten all items across all cart documents
+      // Handle items selection
       const allItems = [];
       carts.forEach((cart) => {
         (cart.items || []).forEach((item) => {
-          // Price: try every possible field name the API might use
-          const unitPrice =
-            item.itemPrice ??
-            item.sellingPrice ??
-            item.price ??
-            item.rate ??
-            item.basePrice ??
-            item.mrp ??
-            0;
-          const lineQty = item.quantity || 1;
           allItems.push({
-            id: item._id || item.cartRowId || item.product_retailer_id || item.itemId, // Unique row ID for React key and selection
-            productId: item.product_retailer_id || item.itemId, // Actual item ID for backend payload
-            cartRowId: item._id || item.itemId, // Cart item row _id
-            orderId: cart.orderId || cart._id,
-            name: item.itemName || item.name || "Item",
-            variation: item.variationName || item.variantName || "",
-            variationId: item.variationId || "",
-            addOnDetails: item.addOnDetails || [],
-            addons: (item.addOnDetails || [])
-              .map((a) => a.name || a.addon_item_name || a.addonName)
-              .filter(Boolean)
-              .join(", "),
-            qty: lineQty,
-            price: unitPrice,
-            // Server-computed line total is the ground truth; fall back to qty×price
-            total: item.itemTotal ?? item.lineTotal ?? item.amount ?? (unitPrice * lineQty),
-            image: item.itemImage || item.image || null,
+            id: item._id || item.cartRowId || item.product_retailer_id || item.itemId,
           });
         });
       });
-
-      setItems(allItems);
       setSelectedItemIds((prev) => {
         const next = new Set(prev);
         allItems.forEach((it) => {
@@ -220,13 +196,29 @@ export default function CartPage() {
         });
         return next;
       });
-      setCartCount(allItems.reduce((s, it) => s + it.qty, 0));
+
       setFetchError(null);
     } catch (err) {
       setFetchError(err?.message || "Could not load your cart.");
       setItems([]);
     }
-  }, [customerPhone, outletId, token, setCartCount]);
+  }, [customerPhone, outletId, token, updateCartFromCarts, setItems]);
+
+  // ── fetchUserDiscounts ────────────────────────────────────────────────
+  const fetchUserDiscounts = useCallback(async () => {
+    if (!outletId || !token) return;
+    try {
+      setDiscountsLoading(true);
+      const res = await discountApi.getUserDiscounts(outletId, token);
+      const list = res?.data?.discounts || res?.data || res?.discounts || [];
+      const eligibleList = Array.isArray(list) ? list.filter(d => d.eligible) : [];
+      setAvailableDiscounts(eligibleList);
+    } catch {
+      setAvailableDiscounts([]);
+    } finally {
+      setDiscountsLoading(false);
+    }
+  }, [outletId, token]);
 
   // Initial load
   useEffect(() => {
@@ -236,11 +228,14 @@ export default function CartPage() {
     (async () => {
       // Don't show skeleton if we already have data
       setLoading(prev => items.length === 0 ? true : prev);
-      await fetchCart();
+      await Promise.all([
+        fetchCart(),
+        fetchUserDiscounts()
+      ]);
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoggedIn, customerPhone, outletId, token, fetchCart]);
+  }, [isLoggedIn, customerPhone, outletId, token, fetchCart, fetchUserDiscounts]);
 
   // ── updateQty — optimistic + re-sync ─────────────────────────────────
   const updateQty = async (item, delta) => {
@@ -320,7 +315,7 @@ export default function CartPage() {
           {
             outletId: outletId,
             orderId: item.orderId,
-            itemid: item.cartRowId,
+            itemId: item.cartRowId,
             customerPhoneNo: customerPhone,
             customerName: customer?.name || ""
           },
@@ -370,7 +365,7 @@ export default function CartPage() {
             {
               outletId: outletId,
               orderId: item.orderId,
-              itemid: item.cartRowId,
+              itemId: item.cartRowId,
               customerPhoneNo: customerPhone,
               customerName: customer?.name || ""
             },
@@ -397,20 +392,26 @@ export default function CartPage() {
   };
 
   // ── applyCoupon ───────────────────────────────────────────────────────
-  const applyCoupon = async () => {
+  const applyCoupon = async (discountObj = null) => {
     const orderId = cartData?.[0]?.orderId || cartData?.[0]?._id;
-    if (!coupon || !orderId) return;
-    setCouponLoading(true);
+    const isManual = !discountObj || !discountObj._id;
+    const codeToApply = isManual ? coupon : "";
+    const discountId = isManual ? "" : discountObj._id;
+    
+    if ((!codeToApply && !discountId) || !orderId) return;
+    
+    setCouponLoading(discountId || "manual");
     try {
       await discountApi.applyToCart(
-        { orderId, discountCode: coupon, outletId: outlet._id },
+        { orderId, code: codeToApply, discountId, outletId: outlet._id },
         token
       );
-      setCouponState({ ok: true, msg: `"${coupon}" applied successfully` });
+      setCouponState({ ok: true, msg: isManual ? `"${coupon}" applied successfully` : `"${discountObj.name || discountObj.title}" applied` });
+      if (isManual) setCoupon("");
       // Re-fetch so savedAmount shows in bill
       await fetchCart();
     } catch (err) {
-      setCouponState({ ok: false, msg: err.message || "That code doesn't look valid" });
+      setCouponState({ ok: false, msg: err.message || "That discount could not be applied" });
     } finally {
       setCouponLoading(false);
     }
@@ -600,8 +601,43 @@ export default function CartPage() {
               ))}
             </div>
 
+            {/* Available Discounts */}
+            {!discountsLoading && availableDiscounts.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-[var(--color-ink)]">Available Offers</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {availableDiscounts.map(discount => {
+                    const isApplying = couponLoading === discount._id;
+                    return (
+                      <Card 
+                        key={discount._id} 
+                        hover={!isApplying}
+                        className="p-3.5 flex items-center gap-3 cursor-pointer border-[var(--color-primary)]/20 hover:border-[var(--color-primary)]/40 transition-colors"
+                        onClick={() => !isApplying && applyCoupon(discount)}
+                      >
+                        <div className="h-10 w-10 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center shrink-0">
+                          {isApplying ? <Loader2 className="h-5 w-5 animate-spin" /> : <Tag className="h-5 w-5" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{discount.name || discount.title}</p>
+                          <p className="text-xs text-[var(--color-text-muted)] truncate mt-0.5">
+                            {discount.discountAmount ? `₹${discount.discountAmount} OFF` : (discount.discountPercentage ? `${discount.discountPercentage}% OFF` : 'Tap to apply')}
+                          </p>
+                          {discount.validUntil && (
+                            <p className="text-[10px] text-[var(--color-text-faint)] mt-1">
+                              Valid till {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(discount.validUntil))}
+                            </p>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Coupon */}
-            <Card className="p-4">
+            <Card className="p-4 mt-4">
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center rounded-btn border border-[var(--color-border)] bg-[var(--color-bg)] focus-within:border-[var(--color-primary)] focus-within:ring-2 focus-within:ring-[var(--color-primary)]/15 transition-all">
                   <Tag className="h-4 w-4 text-[var(--color-text-faint)] ml-3 shrink-0" />

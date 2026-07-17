@@ -57,7 +57,7 @@ function SectionCard({ title, icon: Icon, action, children }) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { customer, outlet, token, settings } = useApp();
+  const { customer, outlet, token, settings, activeOrderId, setActiveOrderId } = useApp();
   const [payment, setPayment] = useState("cod");
   const [promo, setPromo] = useState("");
   const [promoMsg, setPromoMsg] = useState("");
@@ -151,19 +151,29 @@ export default function CheckoutPage() {
             longitude: address?.longitude || 79.634514
           };
 
-      const payload = {
+      const updatePayload = {
+        orderId: activeOrderId || cartData?.orderId || cartData?._id,
         items: itemsPayload,
         deliveryType: cartData?.orderType || "Door Delivery",
         orderType: cartData?.orderType || "Door Delivery",
-        customerName: customer?.name || customer?.customerName || "",
-        customerPhoneNo: customer?.phone || customer?.phoneNo || "",
-        instruction: cartData?.instruction || "",
         outletId: outlet._id,
         ...addressPayload
       };
 
-      console.log("Checkout payload:", payload);
-      await cartApi.create(payload, token);
+      // 1. Sync any address changes or cart state
+      await cartApi.update(updatePayload, token);
+
+      // 2. Perform checkout
+      const checkoutPayload = {
+        orderId: activeOrderId || cartData?.orderId || cartData?._id,
+        outletId: outlet._id,
+        customerPhoneNo: customer?.phone || customer?.phoneNo || customer?.mobileNumber || "",
+      };
+      console.log("Checkout payload:", checkoutPayload);
+      const res = await cartApi.checkout(checkoutPayload, token);
+      
+      // If successful, clear local active order
+      setActiveOrderId(null);
 
       setPlacing(false);
       navigate("/orders");

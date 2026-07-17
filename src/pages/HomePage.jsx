@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Ticket, Sparkles, Leaf, Search, Truck, ShoppingBag, CalendarClock,
-  Trash2, MapPin, ArrowRight, ArrowUpRight,
+  Trash2, MapPin, ArrowRight, ArrowUpRight, X,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { BannerSkeleton, ProductGridSkeleton } from "@/pages/LoadingStates";
@@ -13,7 +13,8 @@ import SectionDivider from "@/components/shared/SectionDivider";
 import { formatPrice } from "@/lib/theme";
 import { cartApi, extractCarts } from "@/lib/api/services";
 import useReveal from "@/hooks/useReveal";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui";
 
 /* ────────────────────────────────────────────────────────────────────────
    HomePage — the authenticated Home experience.
@@ -155,13 +156,14 @@ export default function HomePage() {
   const {
     banners, categories, discounts, setCartCount, isStoreOpen, customer, outlet, token, belongsTo,
     orderType, setOrderType, isDeliveryAvailable, isPickupAvailable, isLoggedIn,
+    quantities, setQuantities, activeOrderId, setActiveOrderId, updateCartFromCarts,
   } = useApp();
   const firstName = customer?.name?.split(" ")[0];
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [quantities, setQuantities] = useState({});
-  const [activeOrderId, setActiveOrderId] = useState(null);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+  // Shared cart states managed by AppContext
   const [vegOnly, setVegOnly] = useState(false);
   const categoryRefs = useRef({});
 
@@ -181,24 +183,10 @@ export default function HomePage() {
       try {
         const res = await cartApi.getDetails(phone, outlet._id, token);
         const carts = extractCarts(res);
-        const firstCart = carts?.[0];
-        if (firstCart) {
-          setActiveOrderId(firstCart.orderId || firstCart._id);
-          const qMap = {};
-          carts.forEach((cart) => {
-            (cart.items || []).forEach((item) => {
-              const id = item.product_retailer_id || item.itemId || item._id;
-              if (id) qMap[id] = (qMap[id] || 0) + (item.quantity || 1);
-            });
-          });
-          setQuantities(qMap);
-        } else {
-          setActiveOrderId(null);
-          setQuantities({});
-        }
+        updateCartFromCarts(carts);
       } catch { /* ignore */ }
     })();
-  }, [token, customer, outlet?._id]);
+  }, [token, customer, outlet?._id, updateCartFromCarts]);
 
   useEffect(() => {
     const total = Object.values(quantities).reduce((s, q) => s + q, 0);
@@ -208,6 +196,19 @@ export default function HomePage() {
   const scrollToCategory = (catId) => {
     setActiveCategory(catId);
     categoryRefs.current[catId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const sortedBanners = [...(banners || [])].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+
+  const handleBannerClick = (banner) => {
+    if (!banner || !banner.type) return;
+    if (banner.type === "category" && (banner.categoryId || banner.referenceId)) {
+      scrollToCategory(banner.categoryId || banner.referenceId);
+    } else if (banner.type === "item" && (banner.itemId || banner.referenceId)) {
+      navigate(`/product/${banner.itemId || banner.referenceId}`);
+    } else if (banner.type === "cta" && banner.url) {
+      window.open(banner.url, "_blank", "noopener,noreferrer");
+    }
   };
 
   const filteredCategories = menuData
@@ -240,6 +241,9 @@ export default function HomePage() {
     .map(([id, qty]) => ({ item: menuData.flatMap((c) => c.items || []).find((i) => i._id === id), qty }))
     .filter((entry) => entry.item);
 
+  // Serialize cart mutations so rapid taps don't cause race conditions
+  const cartMutexRef = useRef(Promise.resolve());
+
   const handleAddToCart = async (itemId, qty) => {
     const prevQty = quantities[itemId] || 0;
     setQuantities((prev) => {
@@ -252,82 +256,100 @@ export default function HomePage() {
     // Normalize phone: always send as stored (backend handles prefix)
     const rawPhone = customer?.phone || customer?.phoneNo || customer?.mobileNumber || "";
 
-    try {
-      if (qty <= 0) {
-        // Removing item
-        if (activeOrderId) {
-          await cartApi.deleteItem({
-            orderId: activeOrderId,
-            itemid: itemId,
-            outletId: outlet._id,
-            customerPhoneNo: rawPhone,
-            customerName: customer?.name || customer?.customerName || ""
-          }, token).catch(() => { });
+    // Chain onto the mutex so concurrent adds run sequentially
+    cartMutexRef.current = cartMutexRef.current.then(async () => {
+      try {
+        if (qty <= 0) {
+          // Removing item
+          if (activeOrderId) {
+            await cartApi.deleteItem({
+              orderId: activeOrderId,
+              itemId: itemId,
+              outletId: outlet._id,
+              customerPhoneNo: rawPhone,
+              customerName: customer?.name || customer?.customerName || ""
+            }, token).catch(() => { });
+          }
+        } else if (activeOrderId) {
+          const savedAddrStr = localStorage.getItem("selectedAddress");
+          const savedAddr = savedAddrStr ? JSON.parse(savedAddrStr) : null;
+          const validLat = savedAddr?.latitude && !isNaN(Number(savedAddr.latitude)) ? Number(savedAddr.latitude) : 10.777460;
+          const validLng = savedAddr?.longitude && !isNaN(Number(savedAddr.longitude)) ? Number(savedAddr.longitude) : 79.634514;
+          const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
+            ? { addressId: savedAddr.id || savedAddr._id }
+            : {
+              address1: "Default",
+              address2: "Default",
+              city: "Default",
+              state: "Default",
+              country: "India",
+              pincode: "000000",
+              latitude: validLat,
+              longitude: validLng
+            };
+            const updatedQuantities = { ...quantities, [itemId]: qty };
+            if (qty <= 0) delete updatedQuantities[itemId];
+            const fullItems = Object.entries(updatedQuantities).map(([id, q]) => ({
+              itemId: id,
+              quantity: q,
+              variationId: "",
+              addOnDetails: []
+            }));
+            // Use fullItems in cart update/create payload
+            const payloadItems = fullItems;
+            // For update
+            await cartApi.update(
+              {
+                orderId: activeOrderId,
+                items: payloadItems,
+                outletId: outlet._id,
+                deliveryType: orderType || "Door Delivery",
+                orderType: orderType || "Door Delivery",
+                ...addressPayload
+              },
+              token
+            );
+        } else {
+          // No cart yet — create a fresh one
+          const savedAddrStr = localStorage.getItem("selectedAddress");
+          const savedAddr = savedAddrStr ? JSON.parse(savedAddrStr) : null;
+          const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
+            ? { addressId: savedAddr.id || savedAddr._id }
+            : {
+              address1: "Default",
+              address2: "Default",
+              city: "Default",
+              state: "Default",
+              country: "India",
+              pincode: "000000",
+              latitude: 10.777460,
+              longitude: 79.634514
+            };
+
+            // For create – use full items list
+            const payloadItems = fullItems;
+            const createPayload = {
+              items: payloadItems,
+              deliveryType: orderType || "Door Delivery",
+              orderType: orderType || "Door Delivery",
+              customerName: customer?.name || customer?.customerName || "",
+              customerPhoneNo: rawPhone,
+              instruction: "",
+              outletId: outlet._id,
+              ...addressPayload
+            };
+            console.log("Creating cart with payload:", createPayload);
+            await cartApi.create(createPayload, token);
         }
-      } else if (activeOrderId) {
-        // Cart exists — always use update (it upserts items, even new ones)
-        await cartApi.update(
-          {
-            orderId: activeOrderId,
-            items: [{ itemId, quantity: qty }],
-            outletId: outlet._id,
-          },
-          token
-        );
-      } else {
-        // No cart yet — create a fresh one
-        const savedAddrStr = localStorage.getItem("selectedAddress");
-        const savedAddr = savedAddrStr ? JSON.parse(savedAddrStr) : null;
-        const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
-          ? { addressId: savedAddr.id || savedAddr._id }
-          : {
-            address1: "Default",
-            address2: "Default",
-            city: "Default",
-            state: "Default",
-            country: "India",
-            pincode: "000000",
-            latitude: 10.777460,
-            longitude: 79.634514
-          };
 
-        const payload = {
-          items: [{ itemId, quantity: qty, variationId: "", addOnDetails: [], currency: "INR" }],
-          deliveryType: orderType || "Door Delivery",
-          orderType: orderType || "Door Delivery",
-          customerName: customer?.name || customer?.customerName || "",
-          customerPhoneNo: rawPhone,
-          instruction: "",
-          outletId: outlet._id,
-          ...addressPayload
-        };
-        console.log("Creating cart with payload:", payload);
-        const res = await cartApi.create(payload, token);
-        // Extract the new orderId from any response shape
-        const created = extractCarts(res);
-        const newOrderId =
-          created[0]?.orderId || created[0]?._id ||
-          res?.data?.orderId || res?.data?._id ||
-          res?.orderId || res?._id;
-        if (newOrderId) setActiveOrderId(newOrderId);
-      }
-
-      // Always re-sync quantities from backend after any mutation
-      const detailsRes = await cartApi.getDetails(rawPhone, outlet._id, token);
-      const carts = extractCarts(detailsRes);
-      const firstCart = carts?.[0];
-      if (firstCart) {
-        setActiveOrderId(firstCart.orderId || firstCart._id);
-        const qMap = {};
-        carts.forEach((cart) => {
-          (cart.items || []).forEach((item) => {
-            const id = item.product_retailer_id || item.itemId || item._id;
-            if (id) qMap[id] = (qMap[id] || 0) + (item.quantity || 1);
-          });
-        });
-        setQuantities(qMap);
-      }
-    } catch { /* silent — local optimistic state is already set */ }
+        // Always re-fetch the full cart after any mutation so we get
+        // ALL items — the create/update response is partial and would
+        // overwrite quantities for items not in the response.
+        const detailsRes = await cartApi.getDetails(rawPhone, outlet._id, token);
+        const carts = extractCarts(detailsRes);
+        updateCartFromCarts(carts);
+      } catch { /* silent — local optimistic state is already set */ }
+    });
   };
 
   const handleClearCart = async (e) => {
@@ -389,26 +411,42 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 70, damping: 14, mass: 0.8, delay: 0.05 }}
           >
-            {loading ? (
-              <div className="rounded-3xl overflow-hidden shadow-[var(--iy-shadow-xs)]">
-                <BannerSkeleton />
-              </div>
-            ) : banners?.length > 0 ? (
-              <div className="relative rounded-3xl overflow-hidden shadow-[var(--iy-shadow-sm)]">
-                <img src={banners[0]?.image?.mobileView || banners[0]?.imageUrl} alt="Promo" className="w-full h-36 lg:h-64 object-cover" />
-              </div>
-            ) : (
-              <div className="relative rounded-3xl overflow-hidden bg-[var(--iy-ink)] p-6 lg:p-10 text-white shadow-[var(--iy-shadow-md)]">
-                <div className="iy-drift-slow pointer-events-none absolute -top-10 -right-10 h-40 w-40 lg:h-56 lg:w-56 rounded-full bg-[var(--iy-accent)]/25 blur-3xl" />
-                <Sparkles className="relative h-5 w-5 lg:h-6 lg:w-6 mb-2 text-[var(--iy-accent)]" />
-                <p className="relative iy-serif font-medium text-lg lg:text-3xl">
-                  {timeGreeting()}{firstName ? `, ${firstName}` : ""}
-                </p>
-                <p className="relative text-sm lg:text-base text-white/70 mt-1">
-                  {outlet?.outletName ? `Ordering from ${outlet.outletName}` : "Fresh food, fast delivery"}
-                </p>
-              </div>
-            )}
+            <AnimatePresence mode="wait">
+              {loading ? (
+                <motion.div
+                  key="loading-banner"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="rounded-3xl overflow-hidden shadow-[var(--iy-shadow-xs)]"
+                >
+                  <BannerSkeleton />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="content-banner"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex flex-col gap-4">
+                    {/* Welcome Card */}
+                    <div className="relative rounded-3xl overflow-hidden bg-[var(--iy-ink)] p-6 lg:p-10 text-white shadow-[var(--iy-shadow-md)]">
+                      <div className="iy-drift-slow pointer-events-none absolute -top-10 -right-10 h-40 w-40 lg:h-56 lg:w-56 rounded-full bg-[var(--iy-accent)]/25 blur-3xl" />
+                      <Sparkles className="relative h-5 w-5 lg:h-6 lg:w-6 mb-2 text-[var(--iy-accent)]" />
+                      <p className="relative iy-serif font-medium text-lg lg:text-3xl">
+                        {timeGreeting()}{firstName ? `, ${firstName}` : ""}
+                      </p>
+                      <p className="relative text-sm lg:text-base text-white/70 mt-1">
+                        {outlet?.outletName ? `Ordering from ${outlet.outletName}` : "Fresh food, fast delivery"}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Offers strip */}
@@ -422,62 +460,118 @@ export default function HomePage() {
         <SectionDivider variant="gradient" />
 
         {/* Categories — horizontal, real data, replaces the old sidebar rail */}
-        {menuData.length > 0 && (
-          <div className="max-w-desktop mx-auto px-5">
-            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-1 px-1">
-              <button
-                onClick={() => setVegOnly(!vegOnly)}
-                className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300 ${vegOnly ? "bg-[var(--iy-accent-soft)] border-[var(--iy-accent)]/40 text-[var(--iy-accent-dark)]" : "border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30"
-                  }`}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="categories-skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-desktop mx-auto px-5"
+            >
+              <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-1 px-1">
+                <Skeleton className="h-8 w-24 rounded-full shrink-0" />
+                <Skeleton className="h-8 w-20 rounded-full shrink-0" />
+                <Skeleton className="h-8 w-28 rounded-full shrink-0" />
+                <Skeleton className="h-8 w-24 rounded-full shrink-0" />
+                <Skeleton className="h-8 w-20 rounded-full shrink-0" />
+              </div>
+            </motion.div>
+          ) : (
+            menuData.length > 0 && (
+              <motion.div
+                key="categories-content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="max-w-desktop mx-auto px-5"
               >
-                <Leaf className="h-3.5 w-3.5" /> Veg only
-              </button>
-              {filteredCategories.map((cat) => {
-                const active = activeCategory === cat._id;
-                return (
+                <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-1 px-1">
                   <button
-                    key={cat._id}
-                    onClick={() => scrollToCategory(cat._id)}
-                    className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${active ? "bg-[var(--iy-accent)] text-white shadow-[var(--iy-shadow-sm)]" : "bg-white border border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30 hover:text-[var(--iy-ink)]"
+                    onClick={() => setVegOnly(!vegOnly)}
+                    className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300 ${vegOnly ? "bg-[var(--iy-accent-soft)] border-[var(--iy-accent)]/40 text-[var(--iy-accent-dark)]" : "border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30"
                       }`}
                   >
-                    {cat.name}
+                    <Leaf className="h-3.5 w-3.5" /> Veg only
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                  {filteredCategories.map((cat) => {
+                    const active = activeCategory === cat._id;
+                    return (
+                      <button
+                        key={cat._id}
+                        onClick={() => scrollToCategory(cat._id)}
+                        className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${active ? "bg-[var(--iy-accent)] text-white shadow-[var(--iy-shadow-sm)]" : "bg-white border border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30 hover:text-[var(--iy-ink)]"
+                          }`}
+                      >
+                        {cat.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )
+          )}
+        </AnimatePresence>
 
         {/* Popular / Recommended — grouped by category, driven entirely by
             the categories API response (no invented "popular" endpoint). */}
         <div className="max-w-desktop mx-auto px-5 mt-6 animate-[iyFadeUp_.3s_ease-out]">
-          {loading ? (
-            <ProductGridSkeleton count={4} />
-          ) : menuData.length === 0 ? (
-            <div className="text-center py-16 rounded-3xl border border-dashed border-[var(--iy-border)] bg-white/60">
-              <p className="text-[var(--iy-ink-soft)]">No products available right now.</p>
-            </div>
-          ) : (
-            <div className="space-y-10">
-              {filteredCategories.map((cat) => (
-                <section key={cat._id} ref={(el) => (categoryRefs.current[cat._id] = el)} className="scroll-mt-40">
-                  <h2 className="iy-serif text-xl lg:text-2xl font-medium text-[var(--iy-ink)] mb-4">{cat.name}</h2>
-                  <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-5">
-                    {(cat.items || []).map((item) => (
-                      <ProductCard
-                        key={item._id}
-                        item={item}
-                        qty={quantities[item._id] || 0}
-                        onQtyChange={(q) => handleAddToCart(item._id, q)}
-                        onClick={() => navigate(`/product/${item._id}`)}
-                      />
-                    ))}
-                  </div>
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="products-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-10"
+              >
+                <section className="scroll-mt-40">
+                  <Skeleton className="h-7 w-48 mb-4 rounded-md bg-border/40" />
+                  <ProductGridSkeleton count={6} />
                 </section>
-              ))}
-            </div>
-          )}
+              </motion.div>
+            ) : menuData.length === 0 ? (
+              <motion.div
+                key="products-empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-center py-16 rounded-3xl border border-dashed border-[var(--iy-border)] bg-white/60"
+              >
+                <p className="text-[var(--iy-ink-soft)]">No products available right now.</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="products-content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-10"
+              >
+                {filteredCategories.map((cat) => (
+                  <section key={cat._id} ref={(el) => (categoryRefs.current[cat._id] = el)} className="scroll-mt-40">
+                    <h2 className="iy-serif text-xl lg:text-2xl font-medium text-[var(--iy-ink)] mb-4">{cat.name}</h2>
+                    <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-5">
+                      {(cat.items || []).map((item) => (
+                        <ProductCard
+                          key={item._id}
+                          item={item}
+                          qty={quantities[item._id] || 0}
+                          onQtyChange={(q) => handleAddToCart(item._id, q)}
+                          onClick={() => navigate(`/product/${item._id}`)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Continue Browsing — resumes from real cart state */}
@@ -523,6 +617,60 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Banner Popup Overlay */}
+      <AnimatePresence>
+        {!loading && !isBannerDismissed && sortedBanners.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setIsBannerDismissed(true)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative w-full max-w-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory rounded-3xl shadow-2xl">
+                {sortedBanners.map(banner => (
+                  <div
+                    key={banner._id || Math.random()}
+                    className="snap-center shrink-0 w-full relative overflow-hidden cursor-pointer bg-white"
+                    onClick={() => {
+                      handleBannerClick(banner);
+                      setIsBannerDismissed(true);
+                    }}
+                  >
+                    <picture>
+                      {(banner.image?.webView || banner.imageUrl) && (
+                        <source media="(min-width: 1024px)" srcSet={banner.image?.webView || banner.imageUrl} />
+                      )}
+                      <img
+                        src={banner.image?.mobileView || banner.image?.webView || banner.imageUrl}
+                        alt="Promo"
+                        className="w-full h-auto max-h-[70vh] object-contain rounded-3xl"
+                      />
+                    </picture>
+                  </div>
+                ))}
+              </div>
+              {/* Cancel Button */}
+              <button
+                onClick={() => setIsBannerDismissed(true)}
+                className="absolute -top-4 -right-4 bg-white text-[var(--iy-ink)] p-2 rounded-full z-10 hover:bg-gray-100 transition-colors shadow-lg"
+                aria-label="Dismiss banner"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

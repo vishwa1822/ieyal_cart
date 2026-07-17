@@ -8,7 +8,7 @@ import { QuantityStepper } from "@/components/shared/QuantityStepper";
 import { BottomSheet } from "@/components/shared/BottomSheet";
 import { formatPrice } from "@/lib/theme";
 import { useApp } from "@/context/AppContext";
-import { productApi, cartApi } from "@/lib/api/services";
+import { productApi, cartApi, extractCarts } from "@/lib/api/services";
 
 // ===========================================================================
 // Maps to: POST /item/getItemDetail { itemId, outletId }
@@ -18,7 +18,7 @@ import { productApi, cartApi } from "@/lib/api/services";
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { outlet, token, customer, belongsTo } = useApp();
+  const { outlet, token, customer, belongsTo, activeOrderId, orderType, quantities, updateCartFromCarts } = useApp();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedVariation, setSelectedVariation] = useState(null);
@@ -99,37 +99,75 @@ export default function ProductDetailPage() {
 
       const savedAddrStr = localStorage.getItem("selectedAddress");
       const savedAddr = savedAddrStr ? JSON.parse(savedAddrStr) : null;
-      const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
-        ? { addressId: savedAddr.id || savedAddr._id }
-        : {
-          address1: "Default",
-          address2: "Default",
-          city: "Default",
-          state: "Default",
-          country: "India",
-          pincode: "000000",
-          latitude: 10.777460,
-          longitude: 79.634514
-        };
+      const validLat = savedAddr?.latitude && !isNaN(Number(savedAddr.latitude)) ? Number(savedAddr.latitude) : 10.777460;
+      const validLng = savedAddr?.longitude && !isNaN(Number(savedAddr.longitude)) ? Number(savedAddr.longitude) : 79.634514;
+      const addressIdObj = (savedAddr && (savedAddr.id || savedAddr._id)) ? { addressId: savedAddr.id || savedAddr._id } : {};
 
-      const payload = {
-        items: [{
-          itemId: id,
-          quantity: qty,
-          variationId: selectedVariation?._id || "",
-          addOnDetails,
-          currency: "INR",
-        }],
-        deliveryType: "Door Delivery",
-        orderType: "Door Delivery",
-        customerName: customer?.name || "",
-        customerPhoneNo: customer?.phone || "",
-        instruction: "",
-        outletId: outlet._id,
-        ...addressPayload
+      const addressPayload = {
+        latitude: validLat,
+        longitude: validLng,
+        ...addressIdObj
       };
+      
+      const missingDefaults = !addressIdObj.addressId ? {
+        address1: "Default",
+        address2: "Default",
+        city: "Default",
+        state: "Default",
+        country: "India",
+        pincode: "000000",
+      } : {};
 
-      await cartApi.create(payload, token);
+      // Build a full items list merging existing cart quantities with the new item
+      const updatedQuantities = { ...quantities, [id]: qty };
+      // Remove if quantity zero (shouldn't happen here as qty>=1)
+      if (updatedQuantities[id] <= 0) delete updatedQuantities[id];
+      const fullItems = Object.entries(updatedQuantities).map(([itemId, quantity]) => ({
+        itemId,
+        quantity,
+        variationId: "", // Variation handling can be added later if needed
+        addOnDetails: [], // Add-on handling can be extended per item
+      }));
+
+      if (activeOrderId) {
+        await cartApi.update(
+          {
+            orderId: activeOrderId,
+            items: fullItems,
+            outletId: outlet._id,
+            deliveryType: orderType || "Door Delivery",
+            orderType: orderType || "Door Delivery",
+            ...addressPayload,
+            ...missingDefaults
+          },
+          token
+        );
+      } else {
+        await cartApi.create(
+          {
+            items: fullItems,
+            deliveryType: orderType || "Door Delivery",
+            orderType: orderType || "Door Delivery",
+            customerName: customer?.name || "",
+            customerPhoneNo: customer?.phone || customer?.mobileNumber || "",
+            instruction: "",
+            outletId: outlet._id,
+            ...missingDefaults,
+            ...addressPayload
+          },
+          token
+        );
+      }
+
+      // Re-fetch full cart to synchronize state
+      const detailsRes = await cartApi.getDetails(
+        customer?.phone || customer?.phoneNo || customer?.mobileNumber || "",
+        outlet._id,
+        token
+      );
+      const carts = extractCarts(detailsRes);
+      updateCartFromCarts(carts);
+
       navigate("/cart");
     } catch {
       navigate("/cart");
@@ -174,8 +212,8 @@ export default function ProductDetailPage() {
                     key={v._id}
                     onClick={() => setSelectedVariation(v)}
                     className={`flex-1 py-2.5 rounded-btn text-sm font-semibold border-2 transition-all ${selectedVariation?._id === v._id
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border text-muted"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted"
                       }`}
                   >
                     {v.name}
