@@ -243,6 +243,9 @@ export default function HomePage() {
 
   // Serialize cart mutations so rapid taps don't cause race conditions
   const cartMutexRef = useRef(Promise.resolve());
+  // Keep a ref to latest quantities so the mutex chain always reads fresh state
+  const quantitiesRef = useRef(quantities);
+  quantitiesRef.current = quantities;
 
   const handleAddToCart = async (itemId, qty) => {
     const prevQty = quantities[itemId] || 0;
@@ -259,6 +262,35 @@ export default function HomePage() {
     // Chain onto the mutex so concurrent adds run sequentially
     cartMutexRef.current = cartMutexRef.current.then(async () => {
       try {
+        // Build the full items list from the latest quantities ref
+        // (avoids stale closure — quantitiesRef.current is always fresh)
+        const latestQuantities = { ...quantitiesRef.current, [itemId]: qty };
+        if (qty <= 0) delete latestQuantities[itemId];
+        const fullItems = Object.entries(latestQuantities).map(([id, q]) => ({
+          itemId: id,
+          quantity: q,
+          variationId: "",
+          addOnDetails: []
+        }));
+
+        // Shared address payload
+        const savedAddrStr = localStorage.getItem("selectedAddress");
+        const savedAddr = savedAddrStr ? JSON.parse(savedAddrStr) : null;
+        const validLat = savedAddr?.latitude && !isNaN(Number(savedAddr.latitude)) ? Number(savedAddr.latitude) : 10.777460;
+        const validLng = savedAddr?.longitude && !isNaN(Number(savedAddr.longitude)) ? Number(savedAddr.longitude) : 79.634514;
+        const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
+          ? { addressId: savedAddr.id || savedAddr._id }
+          : {
+            address1: "Default",
+            address2: "Default",
+            city: "Default",
+            state: "Default",
+            country: "India",
+            pincode: "000000",
+            latitude: validLat,
+            longitude: validLng
+          };
+
         if (qty <= 0) {
           // Removing item
           if (activeOrderId) {
@@ -271,37 +303,11 @@ export default function HomePage() {
             }, token).catch(() => { });
           }
         } else if (activeOrderId) {
-          const savedAddrStr = localStorage.getItem("selectedAddress");
-          const savedAddr = savedAddrStr ? JSON.parse(savedAddrStr) : null;
-          const validLat = savedAddr?.latitude && !isNaN(Number(savedAddr.latitude)) ? Number(savedAddr.latitude) : 10.777460;
-          const validLng = savedAddr?.longitude && !isNaN(Number(savedAddr.longitude)) ? Number(savedAddr.longitude) : 79.634514;
-          const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
-            ? { addressId: savedAddr.id || savedAddr._id }
-            : {
-              address1: "Default",
-              address2: "Default",
-              city: "Default",
-              state: "Default",
-              country: "India",
-              pincode: "000000",
-              latitude: validLat,
-              longitude: validLng
-            };
-            const updatedQuantities = { ...quantities, [itemId]: qty };
-            if (qty <= 0) delete updatedQuantities[itemId];
-            const fullItems = Object.entries(updatedQuantities).map(([id, q]) => ({
-              itemId: id,
-              quantity: q,
-              variationId: "",
-              addOnDetails: []
-            }));
-            // Use fullItems in cart update/create payload
-            const payloadItems = fullItems;
             // For update
             await cartApi.update(
               {
                 orderId: activeOrderId,
-                items: payloadItems,
+                items: fullItems,
                 outletId: outlet._id,
                 deliveryType: orderType || "Door Delivery",
                 orderType: orderType || "Door Delivery",
@@ -311,25 +317,8 @@ export default function HomePage() {
             );
         } else {
           // No cart yet — create a fresh one
-          const savedAddrStr = localStorage.getItem("selectedAddress");
-          const savedAddr = savedAddrStr ? JSON.parse(savedAddrStr) : null;
-          const addressPayload = (savedAddr && (savedAddr.id || savedAddr._id))
-            ? { addressId: savedAddr.id || savedAddr._id }
-            : {
-              address1: "Default",
-              address2: "Default",
-              city: "Default",
-              state: "Default",
-              country: "India",
-              pincode: "000000",
-              latitude: 10.777460,
-              longitude: 79.634514
-            };
-
-            // For create – use full items list
-            const payloadItems = fullItems;
             const createPayload = {
-              items: payloadItems,
+              items: fullItems,
               deliveryType: orderType || "Door Delivery",
               orderType: orderType || "Door Delivery",
               customerName: customer?.name || customer?.customerName || "",

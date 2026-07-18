@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend2.owct.me";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 export const ORG_DOMAIN = import.meta.env.VITE_ORG_DOMAIN || "ieyal";
 
 export const ENDPOINTS = {
