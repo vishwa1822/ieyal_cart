@@ -10,7 +10,7 @@ import { customerApi } from "@/lib/api/services";
 
 // ===========================================================================
 // Login — split-screen: real dining photography on the left (same imagery
-// family as Home/Book-a-Table), phone/OTP + Google auth on the right.
+// family as Home/Dine-In), phone/OTP + Google auth on the right.
 // Uses the same --iy-* design tokens as Home so it reads as one brand, not
 // a bolted-on auth screen. Fully wired to the live API — no mock data:
 // API: POST /customer/login       { phone, belongsTo, mode: "otp" }
@@ -63,7 +63,7 @@ function StepIndicator({ step }) {
 
 /* -------------------------------------------------------------------------
    Left brand panel — desktop only. Uses the same real dining photography
-   as the Home hero + Book-a-Table pages (not a flat gradient), with a
+   as the Home hero + Dine-In pages (not a flat gradient), with a
    dark-to-transparent overlay for text contrast — so Login visually reads
    as the same restaurant, not a different, generic auth screen.
 ------------------------------------------------------------------------- */
@@ -109,7 +109,7 @@ function BrandPanel({ orgName, orgLogo }) {
         className="relative z-10 max-w-md"
       >
         <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white bg-white/15 backdrop-blur-md border border-white/25 rounded-full px-3.5 py-1.5 mb-5">
-          <Sparkles className="h-3 w-3" /> Welcome back to the table
+          <Sparkles className="h-3 w-3" /> Welcome back to dine in
         </span>
         <h1 className="iy-serif text-4xl leading-[1.1] font-medium tracking-tight">
           Good food,<br />plated with intention.

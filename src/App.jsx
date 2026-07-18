@@ -20,7 +20,7 @@ import SearchPage from "./pages/SearchPage";
 // "/" is the public marketing homepage (guest-accessible, no auth required).
 // "/home" is the authenticated Home experience — reached only via
 // Login → OTP → Location selection, and reused as the landing point for
-// every other authenticated flow (Book a Table, Cart, etc. link back here).
+// every other authenticated flow (Dine In, Cart, etc. link back here).
 
 function App() {
   return (

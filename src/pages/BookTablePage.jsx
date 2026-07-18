@@ -118,7 +118,7 @@ export default function BookTablePage() {
             <div className="h-16 w-16 rounded-full bg-[var(--iy-accent-soft)] flex items-center justify-center mb-5 iy-pulse-once">
               <CheckCircle2 className="h-8 w-8 text-[var(--iy-accent)]" strokeWidth={2.5} />
             </div>
-            <h2 className="iy-serif text-2xl font-medium tracking-tight text-[var(--iy-ink)]">Table requested</h2>
+            <h2 className="iy-serif text-2xl font-medium tracking-tight text-[var(--iy-ink)]">Dine in requested</h2>
             <p className="text-sm text-[var(--iy-ink-soft)] mt-2.5 leading-relaxed">
               We've sent your reservation for {guests} guest{guests > 1 ? "s" : ""} on{" "}
               <span className="font-semibold text-[var(--iy-ink)]">
@@ -167,7 +167,7 @@ export default function BookTablePage() {
                 <Sparkles className="h-3 w-3" /> Dine-in Reservation
               </span>
               <h1 className="iy-serif text-[28px] sm:text-4xl lg:text-[44px] leading-[1.08] font-medium text-white tracking-tight max-w-lg">
-                A table, held<br className="hidden sm:block" /> just for you.
+                A dine-in reservation, held<br className="hidden sm:block" /> just for you.
               </h1>
               <p className="mt-2.5 text-sm sm:text-[15px] text-white/80 max-w-md">
                 {outlet?.outletName ? `Reserve your seat at ${outlet.outletName} — no payment needed.` : "Reserve your dine-in experience in under a minute."}

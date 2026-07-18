@@ -9,7 +9,7 @@ import { useApp } from "@/context/AppContext";
 
 // ────────────────────────────────────────────────────────────────────────
 // AppNavbar — the single premium top navigation used across every
-// authenticated page (Home, Cart, Orders, Book Table, Profile, Outlets...).
+// authenticated page (Home, Cart, Orders, Dine In, Profile, Outlets...).
 // Built in the same visual language as the public homepage's SiteNavbar
 // (rounded pill bar, glass-on-scroll, warm ink/accent tokens) so there is
 // no visible seam between the public site and the logged-in app — this

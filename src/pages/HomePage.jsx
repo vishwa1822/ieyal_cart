@@ -53,7 +53,7 @@ function SearchEntry({ value, onChange }) {
   );
 }
 
-/* Smart order-mode fork: delivery / pickup / book a table. Book a Table
+/* Smart order-mode fork: delivery / pickup / dine in. Dine In
    routes to its own flow since it needs date/time/guest inputs. */
 function OrderModeBar({ orderType, setOrderType, isDeliveryAvailable, isPickupAvailable, onBookTable }) {
   const modes = [
@@ -84,7 +84,7 @@ function OrderModeBar({ orderType, setOrderType, isDeliveryAvailable, isPickupAv
         onClick={onBookTable}
         className="flex-1 flex items-center justify-center gap-2 h-11 rounded-full border border-[var(--iy-border)] bg-white text-sm font-semibold text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30 hover:text-[var(--iy-ink)] transition-all duration-300"
       >
-        <CalendarClock className="h-4 w-4" /> Book a table
+        <CalendarClock className="h-4 w-4" /> Dine in
       </button>
     </div>
   );
@@ -417,7 +417,7 @@ export default function HomePage() {
           {/* Search */}
           <SearchEntry value={searchQuery} onChange={setSearchQuery} />
 
-          {/* Delivery / Pickup / Book a table */}
+          {/* Delivery / Pickup / Dine In */}
           <OrderModeBar
             orderType={orderType}
             setOrderType={setOrderType}

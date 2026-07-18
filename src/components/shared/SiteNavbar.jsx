@@ -5,7 +5,7 @@ import { Menu, X, User } from "lucide-react";
 const NAV_LINKS = [
   { label: "Home", href: "/#top" },
   { label: "Explore", href: "/#menu" },
-  { label: "Book Table", href: "/book-table" },
+  { label: "Dine In", href: "/book-table" },
   { label: "Contact", href: "/#footer" },
 ];
 
@@ -22,14 +22,14 @@ function useScrolled(threshold = 24) {
 
 /* ────────────────────────────────────────────────────────────────────────
    SiteNavbar — the single navbar used across every ieyal-themed page
-   (marketing Home, Book My Table, and eventually Login). Keeping this in
+   (marketing Home, Dine In, and eventually Login). Keeping this in
    one file is what makes "consistent with the homepage" actually true
    instead of three slightly-different hand copies drifting apart.
 
    `onLoginClick` — if passed, the Login button opens a modal (e.g. the
    shadcn login sheet) instead of navigating to /login.
    `forceSolid` — pages with a hero image directly under the navbar (like
-   Book My Table) want the glass bar solid-on-load, not only after scroll.
+   Dine In) want the glass bar solid-on-load, not only after scroll.
    ──────────────────────────────────────────────────────────────────── */
 export default function SiteNavbar({ onLoginClick, forceSolid = false, isLoggedIn = false, customerName = "" }) {
   const scrolledPastThreshold = useScrolled();

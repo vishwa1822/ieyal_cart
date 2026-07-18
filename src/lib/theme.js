@@ -14,7 +14,7 @@ export function applyTheme(themeConfig) {
   // ─────────────────────────────────────────────────────────────────────
   // Design decision: the app has ONE premium visual identity — the warm
   // terracotta/cream language established on the public Home, Login, and
-  // Book Table pages (the --iy-* tokens, and the matching --color-*
+  // Dine In pages (the --iy-* tokens, and the matching --color-*
   // defaults in index.css). Every authenticated page must look like it
   // belongs to that same product, not a per-org recolor of it.
   //

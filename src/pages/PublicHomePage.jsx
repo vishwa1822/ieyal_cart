@@ -99,7 +99,7 @@ function Hero() {
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link to="/book-table" className="group relative inline-flex items-center gap-2 rounded-full bg-[var(--iy-accent)] text-white text-sm font-semibold px-7 py-3.5 shadow-[var(--iy-shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--iy-shadow-glow)] active:translate-y-0 active:scale-[0.97] active:shadow-[var(--iy-shadow-xs)]">
-              Book My Table
+              Dine In
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <a href="#dishes" className="inline-flex items-center gap-2 rounded-full border border-[var(--iy-ink)]/15 text-[var(--iy-ink)] text-sm font-semibold px-7 py-3.5 transition-all duration-300 hover:bg-[var(--iy-ink)] hover:text-white hover:border-[var(--iy-ink)] active:scale-[0.97]">
@@ -271,11 +271,11 @@ function ClosingCTA() {
       <div ref={ref} className="iy-reveal max-w-6xl mx-auto relative rounded-[2.5rem] overflow-hidden bg-[var(--iy-ink)] px-8 md:px-16 py-16 md:py-20 text-center">
         <div className="iy-drift-slow pointer-events-none absolute -top-20 -right-10 h-72 w-72 rounded-full bg-[var(--iy-accent)]/25 blur-3xl" />
         <div className="iy-drift-slow pointer-events-none absolute -bottom-24 -left-10 h-72 w-72 rounded-full bg-[var(--iy-accent)]/15 blur-3xl" style={{ animationDelay: "-8s" }} />
-        <h2 className="iy-serif relative text-3xl md:text-[44px] text-white font-medium tracking-tight max-w-xl mx-auto">Your table is one tap away.</h2>
+        <h2 className="iy-serif relative text-3xl md:text-[44px] text-white font-medium tracking-tight max-w-xl mx-auto">Dine in is one tap away.</h2>
         <p className="relative mt-4 text-white/70 max-w-md mx-auto text-[15px]">Reserve a seat or place an order — either way, dinner is handled.</p>
         <div className="relative mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link to="/book-table" className="inline-flex items-center gap-2 rounded-full bg-[var(--iy-accent)] text-white text-sm font-semibold px-7 py-3.5 transition-all duration-300 hover:-translate-y-0.5 shadow-[var(--iy-shadow-glow)] active:translate-y-0 active:scale-95">
-            Book My Table <ArrowRight className="h-4 w-4" />
+            Dine In <ArrowRight className="h-4 w-4" />
           </Link>
           <a href="#dishes" className="inline-flex items-center gap-2 rounded-full border border-white/25 text-white text-sm font-semibold px-7 py-3.5 hover:bg-white hover:text-[var(--iy-ink)] transition-all duration-300 active:scale-95">
             Explore Menu
