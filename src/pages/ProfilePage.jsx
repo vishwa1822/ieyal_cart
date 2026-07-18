@@ -172,7 +172,7 @@ export default function ProfilePage() {
                       <stop offset="50%" stopColor="#FFF4ED" />
                       <stop offset="100%" stopColor="#FFE3D7" />
                     </linearGradient>
-                    
+
                     {/* Upper Diagonal - Soft Terracotta Brand Color Glow */}
                     <radialGradient id="brandGlow" cx="15%" cy="15%" r="65%">
                       <stop offset="0%" stopColor="#A6412B" stopOpacity="0.14" />
@@ -192,10 +192,10 @@ export default function ProfilePage() {
                       <feGaussianBlur stdDeviation="9" />
                     </filter>
                   </defs>
-                  
+
                   {/* Base Background Rect */}
                   <rect width="100" height="100" fill="url(#bgGrad)" />
-                  
+
                   {/* Glowing Blobs overlapping with Blur */}
                   <circle cx="15" cy="15" r="50" fill="url(#brandGlow)" filter="url(#blurEffect)" />
                   <circle cx="90" cy="90" r="55" fill="url(#roseGlow)" filter="url(#blurEffect)" />
@@ -234,7 +234,7 @@ export default function ProfilePage() {
                     <p className="text-lg font-bold text-[#4E392F] leading-none mt-0.5 tabular-nums">240</p>
                   </div>
                 </div>
-                
+
                 <div className="rounded-2xl bg-white/40 backdrop-blur-[12px] border border-white/50 px-4 py-3 flex items-center gap-3.5 shadow-[0_8px_16px_-6px_rgba(34,26,20,0.04)]">
                   <div className="h-11 w-11 rounded-[14px] bg-[#FFF0E8] border border-white/60 flex items-center justify-center shrink-0 shadow-[0_4px_12px_-3px_rgba(251,160,139,0.15)]">
                     <Wallet className="h-5 w-5 text-[#8A3A25]" />

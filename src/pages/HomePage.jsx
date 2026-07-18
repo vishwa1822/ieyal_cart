@@ -201,13 +201,45 @@ export default function HomePage() {
   const sortedBanners = [...(banners || [])].sort((a, b) => (a.rank || 0) - (b.rank || 0));
 
   const handleBannerClick = (banner) => {
-    if (!banner || !banner.type) return;
+    if (!banner) return;
+
+    let hasAction = false;
+    const targetLink = banner.link || banner.url;
+
     if (banner.type === "category" && (banner.categoryId || banner.referenceId)) {
       scrollToCategory(banner.categoryId || banner.referenceId);
+      hasAction = true;
     } else if (banner.type === "item" && (banner.itemId || banner.referenceId)) {
       navigate(`/product/${banner.itemId || banner.referenceId}`);
-    } else if (banner.type === "cta" && banner.url) {
-      window.open(banner.url, "_blank", "noopener,noreferrer");
+      hasAction = true;
+    } else if (targetLink) {
+      try {
+        const urlStr = targetLink;
+        if (urlStr.startsWith("/")) {
+          navigate(urlStr);
+          hasAction = true;
+        } else {
+          const urlObj = new URL(urlStr, window.location.origin);
+          if (urlObj.origin === window.location.origin) {
+            navigate(urlObj.pathname + urlObj.search + urlObj.hash);
+            hasAction = true;
+          } else {
+            // External URL
+            if (window.Telegram?.WebApp?.openLink) {
+              window.Telegram.WebApp.openLink(urlStr);
+            } else {
+              window.open(urlStr, "_blank", "noopener,noreferrer");
+            }
+            hasAction = true;
+          }
+        }
+      } catch (error) {
+        console.error("Invalid banner URL:", error);
+      }
+    }
+
+    if (hasAction) {
+      setIsBannerDismissed(true);
     }
   };
 
@@ -630,10 +662,7 @@ export default function HomePage() {
                   <div
                     key={banner._id || Math.random()}
                     className="snap-center shrink-0 w-full relative overflow-hidden cursor-pointer bg-white"
-                    onClick={() => {
-                      handleBannerClick(banner);
-                      setIsBannerDismissed(true);
-                    }}
+                    onClick={() => handleBannerClick(banner)}
                   >
                     <picture>
                       {(banner.image?.webView || banner.imageUrl) && (

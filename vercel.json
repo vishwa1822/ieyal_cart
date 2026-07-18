@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://backend2.owct.me/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
