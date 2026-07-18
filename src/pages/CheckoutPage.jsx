@@ -90,6 +90,7 @@ export default function CheckoutPage() {
         });
 
         const mergedCart = {
+           orderId: carts[0]?.orderId || carts[0]?._id || "",
            items: allItems,
            orderTotal: totalOrderTotal,
            savedAmount: totalSavedAmount,
@@ -147,37 +148,24 @@ export default function CheckoutPage() {
             state: address?.state || "Default",
             country: address?.country || "India",
             pincode: address?.pincode || "000000",
-            latitude: address?.latitude || 10.777460,
-            longitude: address?.longitude || 79.634514
           };
-
-      const updatePayload = {
-        orderId: activeOrderId || cartData?.orderId || cartData?._id,
-        items: itemsPayload,
-        deliveryType: cartData?.orderType || "Door Delivery",
-        orderType: cartData?.orderType || "Door Delivery",
-        outletId: outlet._id,
-        ...addressPayload
-      };
-
-      // 1. Sync any address changes or cart state
-      await cartApi.update(updatePayload, token);
-
-      // 2. Perform checkout
-      const checkoutPayload = {
-        orderId: activeOrderId || cartData?.orderId || cartData?._id,
-        outletId: outlet._id,
-        customerPhoneNo: customer?.phone || customer?.phoneNo || customer?.mobileNumber || "",
-      };
+        const orderId = activeOrderId || cartData?.orderId || cartData?._id;
+        const checkoutPayload = {
+          orderId,
+          outletId: outlet._id,
+          customerPhoneNo: customer?.phone || customer?.phoneNo || customer?.mobileNumber || "",
+        };
       console.log("Checkout payload:", checkoutPayload);
       const res = await cartApi.checkout(checkoutPayload, token);
       
-      // If successful, clear local active order
+      // If successful, clear local active order and navigate to confirmation
       setActiveOrderId(null);
-
       setPlacing(false);
       navigate("/orders");
-    } catch {
+    } catch (err) {
+      // Extract backend error message if available
+      const msg = err?.response?.data?.message || err?.message || "Checkout failed. Please try again.";
+      alert(msg);
       setPlacing(false);
     }
   };

@@ -34,6 +34,7 @@ export const ENDPOINTS = {
     deleteItem: "/cart/delete",
     updateInstruction: "/cart/update-instruction",
     updateOrderType: "/cart/update-order-type",
+    checkout: "/cart/order-checkout",
   },
   discount: {
     getUserDiscounts: "/discount/get-user-discounts",
