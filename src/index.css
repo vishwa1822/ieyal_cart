@@ -1,0 +1,453 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand tokens — overwritten at runtime by lib/theme.js from the org API.
+     These are the fallback / first-paint values only.
+     Unified with the premium ("ieyal") public homepage design language:
+     warm neutral surfaces + a single confident accent, instead of the old
+     hot-pink fallback. Per-org brand color from the API still overrides
+     --color-primary at runtime — this only changes what it looks like
+     before that loads, and how strongly it reads as "old pink theme". */
+  --color-primary: #a6412b;
+  --color-primary-dark: #832f1f;
+  --color-primary-light: #f3e3da;
+
+  /* Ink is the calm, brand-agnostic dark surface used for headers, the
+     navbar-on-dark states, and high-contrast CTAs. */
+  --color-ink: #221a14;
+  --color-ink-light: #362a20;
+
+  --color-accent: #a6412b;
+
+  --color-bg: #fbf6ee;
+  --color-surface: #ffffff;
+  --color-surface-2: #fdfaf4;
+
+  --color-text: #221a14;
+  --color-text-muted: #6b6058;
+  --color-text-faint: #a39a8f;
+
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #c23b3b;
+  --color-danger-soft: #fbeae9;
+
+  --color-border: rgba(28, 22, 16, 0.08);
+  --color-border-strong: rgba(28, 22, 16, 0.16);
+
+  --font-family: "Work Sans", "Inter", system-ui, sans-serif;
+  --font-display: "Fraunces", "Georgia", serif;
+
+  --radius-card: 24px;
+  --radius-btn: 9999px;
+  --radius-lg: 28px;
+
+  /* Elevation — matches the homepage's soft, warm-toned shadow scale */
+  --shadow-xs: 0 2px 8px -2px rgba(34, 26, 20, 0.10);
+  --shadow-sm: 0 10px 24px -10px rgba(34, 26, 20, 0.16);
+  --shadow-md: 0 20px 40px -16px rgba(34, 26, 20, 0.22);
+  --shadow-lg: 0 30px 60px -20px rgba(34, 26, 20, 0.30);
+  --shadow-glow: 0 16px 32px -12px color-mix(in srgb, var(--color-primary) 55%, transparent);
+
+  /* Desktop layout metrics — no more left sidebar, just a top navbar */
+  --navbar-h: 76px;
+  --content-max: 1280px;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .glass-ink {
+    background: rgba(11, 18, 32, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-border-strong);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* ── IEYAL landing homepage — scoped tokens & motion ───────────────────── */
+.ieyal {
+  --iy-bg: #FBF6EE;
+  --iy-surface: #FFFFFF;
+  --iy-border: rgba(28, 22, 16, 0.08);
+  --iy-ink: #221A14;
+  --iy-ink-soft: #6B6058;
+  --iy-accent: #A6412B;
+  --iy-accent-dark: #832F1F;
+  --iy-accent-soft: #F3E3DA;
+  font-family: "Work Sans", "Inter", system-ui, sans-serif;
+  background: var(--iy-bg);
+  color: var(--iy-ink);
+}
+
+.ieyal .iy-serif {
+  font-family: "Fraunces", "Georgia", serif;
+}
+
+/* Elevation scale — one source of truth instead of ad-hoc rgba() per element */
+.ieyal {
+  --iy-shadow-xs: 0 2px 8px -2px rgba(34, 26, 20, 0.10);
+  --iy-shadow-sm: 0 10px 24px -10px rgba(34, 26, 20, 0.16);
+  --iy-shadow-md: 0 20px 40px -16px rgba(34, 26, 20, 0.22);
+  --iy-shadow-lg: 0 30px 60px -20px rgba(34, 26, 20, 0.30);
+  --iy-shadow-glow: 0 16px 32px -12px rgba(166, 65, 43, 0.45);
+  --iy-nav-h: 84px;
+}
+
+/* Anchors should never land a heading underneath the fixed, blurred navbar */
+.ieyal section[id] {
+  scroll-margin-top: var(--iy-nav-h);
+}
+
+/* Visible, on-brand focus ring everywhere — keyboard users get the same
+   care as pointer users. Uses :focus-visible so mouse clicks stay clean. */
+.ieyal a:focus-visible,
+.ieyal button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--iy-bg), 0 0 0 4.5px var(--iy-accent);
+  border-radius: inherit;
+}
+
+@keyframes iyFloat {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+
+  50% {
+    transform: translateY(-14px) rotate(var(--r, 0deg));
+  }
+}
+
+@keyframes iyFloatSlow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes iyDrift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(18px, -24px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes iyDriftSlow {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-24px, 18px) scale(1.08);
+  }
+}
+
+@keyframes iyPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.28);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes iyFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iyShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.iy-float {
+  animation: iyFloat 7s ease-in-out infinite;
+}
+
+.iy-float-slow {
+  animation: iyFloatSlow 9s ease-in-out infinite;
+}
+
+.iy-particle {
+  animation: iyDrift 12s ease-in-out infinite;
+}
+
+.iy-drift-slow {
+  animation: iyDriftSlow 16s ease-in-out infinite;
+}
+
+.iy-pulse-once {
+  animation: iyPulse .38s ease-out;
+}
+
+.iy-skeleton {
+  background: linear-gradient(90deg, #EDE4D6 25%, #F6EFE3 37%, #EDE4D6 63%);
+  background-size: 200% 100%;
+  animation: iyShimmer 1.6s ease-in-out infinite;
+}
+
+.iy-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity .8s cubic-bezier(.22, .61, .36, 1), transform .8s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal.iy-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.iy-reveal-left {
+  opacity: 0;
+  transform: translateX(-28px);
+  transition: opacity .8s cubic-bezier(.22, .61, .36, 1), transform .8s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-left.iy-in {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.iy-reveal-right {
+  opacity: 0;
+  transform: translateX(28px);
+  transition: opacity .8s cubic-bezier(.22, .61, .36, 1), transform .8s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-right.iy-in {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Blur — for hero media / large imagery, reads as "developing focus" rather
+   than a hard cut. Kept subtle so it never looks like a loading glitch. */
+.iy-reveal-blur {
+  opacity: 0;
+  transform: translateY(16px) scale(1.02);
+  filter: blur(10px);
+  transition: opacity .9s cubic-bezier(.22, .61, .36, 1), transform .9s cubic-bezier(.22, .61, .36, 1), filter .9s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-blur.iy-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+/* Scale — for cards / tiles, a soft "settle into place" instead of blunt fade */
+.iy-reveal-scale {
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity .7s cubic-bezier(.22, .61, .36, 1), transform .7s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-scale.iy-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger — apply .iy-stagger to a container; children pick up increasing
+   delay via nth-child so a grid/list arrives as a ripple, not all at once. */
+.iy-stagger>*:nth-child(1) {
+  transition-delay: 0ms;
+}
+
+.iy-stagger>*:nth-child(2) {
+  transition-delay: 90ms;
+}
+
+.iy-stagger>*:nth-child(3) {
+  transition-delay: 180ms;
+}
+
+.iy-stagger>*:nth-child(4) {
+  transition-delay: 270ms;
+}
+
+.iy-stagger>*:nth-child(5) {
+  transition-delay: 360ms;
+}
+
+.iy-stagger>*:nth-child(6) {
+  transition-delay: 450ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .iy-float,
+  .iy-float-slow,
+  .iy-particle,
+  .iy-drift-slow,
+  .iy-pulse-once,
+  .iy-skeleton {
+    animation: none;
+  }
+
+  .iy-reveal,
+  .iy-reveal-left,
+  .iy-reveal-right,
+  .iy-reveal-blur,
+  .iy-reveal-scale {
+    transition: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .iy-stagger>* {
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ── Section dividers — replace blank section-to-section seams with a
+   quiet, on-brand transition. Single SVG, currentColor-driven. ─────────── */
+.iy-divider {
+  display: block;
+  width: 100%;
+  height: 72px;
+  color: var(--iy-bg);
+  line-height: 0;
+}
+
+.iy-divider--ink {
+  color: var(--iy-ink);
+}
+
+.iy-divider--surface {
+  color: var(--iy-surface);
+}
+
+.iy-divider svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.iy-divider-gradient {
+  height: 48px;
+  width: 100%;
+  background: linear-gradient(180deg, transparent 0%, var(--iy-bg) 100%);
+}
