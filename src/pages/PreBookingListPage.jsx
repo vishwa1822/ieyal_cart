@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { CalendarClock, Sparkles, ArrowRight, CalendarDays } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { AppNavbar } from "@/components/layout/AppShell";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import useReveal from "@/hooks/useReveal";
 import { BannerSkeleton } from "@/pages/LoadingStates";
 import BannerStrip from "@/components/shared/BannerStrip";
 import { openBannerLink } from "@/lib/bannerLink";
@@ -50,6 +50,7 @@ export default function PreBookingListPage() {
   const navigate = useNavigate();
   const { isStoreOpen, isPreBookingEnabled, banners } = useApp();
   const { campaigns, loading, error } = usePreBookingCampaigns();
+  const headerRef = useReveal();
 
   if (!isStoreOpen) return <Navigate to="/closed" replace />;
   if (!loading && !isPreBookingEnabled) return <Navigate to="/home" replace />;
@@ -59,18 +60,32 @@ export default function PreBookingListPage() {
       <AppNavbar />
       <div className="pt-24 lg:pt-28 pb-16">
         <div className="max-w-desktop mx-auto px-5 space-y-6">
-          <SectionHeader
-            eyebrow="Pre Booking"
-            title="Book ahead, order later"
-            subtitle="Reserve your favourites from a limited-time campaign and pick a slot that works for you."
-          />
+          <h1
+            ref={headerRef}
+            className="iy-reveal text-2xl sm:text-3xl font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]"
+          >
+            PRE BOOKING
+          </h1>
 
-          {/* Banner section — sourced entirely from banner/get-active, never hardcoded */}
-          <BannerStrip
-            banners={banners}
-            className="h-40 lg:h-56"
-            onBannerClick={(b) => openBannerLink(b, navigate)}
-          />
+          {/* Banner section with text overlay — sourced entirely from banner/get-active */}
+          <div className="relative rounded-3xl overflow-hidden shadow-[var(--iy-shadow-xs)]">
+            <BannerStrip
+              banners={banners}
+              className="h-40 lg:h-56"
+              onBannerClick={(b) => openBannerLink(b, navigate)}
+            />
+            {/* Subtle dark gradient overlay behind the text to ensure readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent pointer-events-none flex flex-col justify-center px-6 sm:px-12 md:px-16">
+              <div className="max-w-[85%] sm:max-w-[70%] text-white space-y-2">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight leading-tight">
+                  Book ahead, order later
+                </h2>
+                <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
+                  Reserve your favourites from a limited-time campaign and pick a slot that works for you.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {loading && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
