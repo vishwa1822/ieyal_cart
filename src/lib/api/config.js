@@ -23,6 +23,7 @@ export const ENDPOINTS = {
   product: {
     getCategories: "/category/getCategory",
     getItemDetail: "/item/getItemDetail",
+    preOrder: "/category/preOrder",
   },
   cart: {
     getDetails: "/cart/get-cart-details",
@@ -45,5 +46,12 @@ export const ENDPOINTS = {
   },
   order: {
     getAllByCustomer: "/order/get-all-order-by-customer",
+  },
+  delivery: {
+    check: "/delivery/check",
+  },
+  // Pre Booking / Customer Pre Order — documented, live endpoints.
+  preBooking: {
+    getActive: "/preBooking/getActive",
   },
 };

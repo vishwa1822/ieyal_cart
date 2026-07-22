@@ -18,7 +18,7 @@ import { productApi, cartApi, extractCarts } from "@/lib/api/services";
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { outlet, token, customer, belongsTo, activeOrderId, orderType, quantities, updateCartFromCarts } = useApp();
+  const { outlet, token, customer, belongsTo, activeOrderId, orderType, quantities, updateCartFromCarts, isStoreOpen } = useApp();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedVariation, setSelectedVariation] = useState(null);
@@ -72,12 +72,14 @@ export default function ProductDetailPage() {
   }
 
   const itemName = product.itemname || product.name || "Product";
+  // Detail-response variations use `variationid` + `price` (not `_id` /
+  // `sellingPrice` — those only exist on the getCategory list shape).
   const basePrice = selectedVariation?.basePrice || product.basePrice || 0;
-  const sellingPrice = selectedVariation?.sellingPrice || product.sellingPrice || 0;
+  const sellingPrice = selectedVariation?.price ?? product.sellingPrice ?? 0;
   const addonTotal = Object.entries(selectedAddons).reduce((sum, [addonId, on]) => {
     if (!on) return sum;
-    const addon = product.addons?.flatMap((g) => g.items).find((a) => a._id === addonId);
-    return sum + (addon?.price || 0);
+    const addon = product.addons?.flatMap((g) => g.items).find((a) => a.addonitemid === addonId);
+    return sum + (addon?.addonitem_price || 0);
   }, 0);
   const lineTotal = (sellingPrice + addonTotal) * qty;
 
@@ -91,9 +93,9 @@ export default function ProductDetailPage() {
     try {
       const addOnDetails = [];
       product.addons?.forEach((group) => {
-        const selectedIds = group.items.filter((a) => selectedAddons[a._id]).map((a) => a._id);
+        const selectedIds = group.items.filter((a) => selectedAddons[a.addonitemid]).map((a) => a.addonitemid);
         if (selectedIds.length) {
-          addOnDetails.push({ group_id: group.group_id, addon_item_ids: selectedIds });
+          addOnDetails.push({ group_id: group.addongroupid, addon_item_ids: selectedIds });
         }
       });
 
@@ -209,15 +211,15 @@ export default function ProductDetailPage() {
               <div className="flex gap-2">
                 {product.variations.map((v) => (
                   <button
-                    key={v._id}
+                    key={v.variationid}
                     onClick={() => setSelectedVariation(v)}
-                    className={`flex-1 py-2.5 rounded-btn text-sm font-semibold border-2 transition-all ${selectedVariation?._id === v._id
+                    className={`flex-1 py-2.5 rounded-btn text-sm font-semibold border-2 transition-all ${selectedVariation?.variationid === v.variationid
                       ? "border-primary bg-primary/5 text-primary"
                       : "border-border text-muted"
                       }`}
                   >
                     {v.name}
-                    <span className="block text-xs font-normal mt-0.5">{formatPrice(v.sellingPrice)}</span>
+                    <span className="block text-xs font-normal mt-0.5">{formatPrice(v.price)}</span>
                   </button>
                 ))}
               </div>
@@ -240,8 +242,8 @@ export default function ProductDetailPage() {
       <div className="fixed bottom-0 left-0 right-0 z-40 glass border-t border-border/60 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-4">
           <QuantityStepper value={qty} onChange={setQty} size="lg" min={1} />
-          <Button className="flex-1 h-12 text-base font-semibold" onClick={handleAddToCart} disabled={adding}>
-            {adding ? "Adding…" : `Add to cart · ${formatPrice(lineTotal)}`}
+          <Button className="flex-1 h-12 text-base font-semibold" onClick={handleAddToCart} disabled={adding || !isStoreOpen}>
+            {!isStoreOpen ? "Store closed" : (adding ? "Adding…" : `Add to cart · ${formatPrice(lineTotal)}`)}
           </Button>
         </div>
       </div>
@@ -257,24 +259,24 @@ export default function ProductDetailPage() {
         }
       >
         {product.addons?.map((group) => (
-          <div key={group.group_id} className="mb-4">
-            <p className="text-sm font-semibold mb-2">{group.group_name}</p>
+          <div key={group.addongroupid} className="mb-4">
+            <p className="text-sm font-semibold mb-2">{group.addongroup_name}</p>
             <div className="space-y-2">
               {group.items.map((addon) => (
                 <label
-                  key={addon._id}
+                  key={addon.addonitemid}
                   className="flex items-center justify-between p-3 rounded-btn border border-border hover:border-primary/30 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
-                      checked={!!selectedAddons[addon._id]}
-                      onChange={() => toggleAddon(addon._id)}
+                      checked={!!selectedAddons[addon.addonitemid]}
+                      onChange={() => toggleAddon(addon.addonitemid)}
                       className="accent-primary"
                     />
-                    <span className="text-sm">{addon.name}</span>
+                    <span className="text-sm">{addon.addonitem_name}</span>
                   </div>
-                  <span className="text-sm font-medium text-primary">+{formatPrice(addon.price)}</span>
+                  <span className="text-sm font-medium text-primary">+{formatPrice(addon.addonitem_price)}</span>
                 </label>
               ))}
             </div>

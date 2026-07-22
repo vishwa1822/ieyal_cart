@@ -12,6 +12,9 @@ import useReveal from "@/hooks/useReveal";
 // accent). The whole card is the control: tapping an open store selects
 // it and continues in one motion instead of a separate confirm step.
 // ────────────────────────────────────────────────────────────────────────
+/**
+ * @param {{ outlet: import("../../types/outlet").Outlet, onSelect: (outlet: import("../../types/outlet").Outlet) => void }} props
+ */
 export function OutletCard({ outlet, onSelect }) {
   const isOpen = outlet.storeStatus && outlet.isActive;
   const distance = outlet.distance ? formatDistance(outlet.distance / 1000) : null;
@@ -54,14 +57,29 @@ export function OutletCard({ outlet, onSelect }) {
                 <MapPin className="h-3 w-3" /> {distance}
               </span>
             )}
-            {outlet.isDoorDeliveryAvailable && (
+            {outlet.orderType?.includes("Door Delivery") && (
               <span className="flex items-center gap-1">
                 <Bike className="h-3 w-3" /> Delivery
               </span>
             )}
-            {outlet.isSelfPickupAvailable && (
+            {outlet.orderType?.includes("Self Pickup") && (
               <span className="flex items-center gap-1">
                 <ShoppingBag className="h-3 w-3" /> Pickup
+              </span>
+            )}
+            {outlet.orderType?.includes("Dine In") && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" /> Dine In
+              </span>
+            )}
+            {outlet.currencySymbol && (
+              <span className="flex items-center gap-1 border-l border-[var(--color-border)] pl-3">
+                {outlet.currencySymbol} {outlet.currencyCode}
+              </span>
+            )}
+            {outlet.defaultOrderType && (
+              <span className="flex items-center gap-1 border-l border-[var(--color-border)] pl-3 text-[var(--color-ink)]/70">
+                Default: {outlet.defaultOrderType}
               </span>
             )}
           </div>

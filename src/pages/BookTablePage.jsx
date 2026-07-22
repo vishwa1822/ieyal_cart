@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, Button, Label, Separator } from "@/components/ui";
 import { CalendarDays, Clock, Users, CheckCircle2, MessageSquare, Utensils, Sparkles, Phone, User, Star, ShieldCheck, ArrowRight, CalendarPlus, ChevronDown, Check } from "lucide-react";
@@ -36,7 +36,7 @@ function parseLocalDate(str) {
 
 export default function BookTablePage() {
   const navigate = useNavigate();
-  const { outlet, customer, isLoggedIn } = useApp();
+  const { outlet, customer, isLoggedIn, isStoreOpen } = useApp();
   const days = nextDays();
 
   const [selectedDay, setSelectedDay] = useState(0);
@@ -101,6 +101,10 @@ export default function BookTablePage() {
     /^\d{10}$/.test(phone.replace(/\D/g, "").slice(-10)) &&
     (!customDate || !!customDateValue);
 
+  if (!isStoreOpen) {
+    return <Navigate to="/closed" replace />;
+  }
+
   const handleConfirm = () => {
     if (!valid) return;
     // No booking endpoint exists yet in the provided API surface — this
@@ -112,7 +116,7 @@ export default function BookTablePage() {
   if (confirmed) {
     return (
       <div className="ieyal min-h-screen w-full">
-        <SiteNavbar onLoginClick={() => navigate(isLoggedIn ? "/profile" : "/login")} isLoggedIn={isLoggedIn} customerName={customer?.name} forceSolid />
+        <SiteNavbar onLoginClick={() => navigate(isLoggedIn ? "/home" : "/login")} isLoggedIn={isLoggedIn} customerName={customer?.name} forceSolid />
         <div className="pt-32">
           <div className="px-4 lg:px-0 pt-14 pb-16 flex flex-col items-center text-center max-w-sm mx-auto animate-[iyFadeUp_.7s_ease-out]">
             <div className="h-16 w-16 rounded-full bg-[var(--iy-accent-soft)] flex items-center justify-center mb-5 iy-pulse-once">
@@ -143,7 +147,7 @@ export default function BookTablePage() {
 
   return (
     <div className="ieyal min-h-screen w-full">
-      <SiteNavbar onLoginClick={() => navigate(isLoggedIn ? "/profile" : "/login")} isLoggedIn={isLoggedIn} customerName={customer?.name} forceSolid />
+      <SiteNavbar onLoginClick={() => navigate(isLoggedIn ? "/home" : "/login")} isLoggedIn={isLoggedIn} customerName={customer?.name} forceSolid />
 
       <div className="pt-24 sm:pt-28">
 

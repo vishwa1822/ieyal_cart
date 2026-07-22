@@ -64,11 +64,11 @@ export const customerApi = {
     apiRequest(ENDPOINTS.customer.verifyOtp, { body: { phone, belongsTo, otp } }),
 
   // POST /customer/get-addresses?page=1&limit=20  { customerPhoneNo, lat, lng }
-  getAddresses: (customerPhoneNo, lat, lng, token) =>
+  getAddresses: (customerPhoneNo, lat, lng, token, page = 1, limit = 20) =>
     apiRequest(ENDPOINTS.customer.getAddresses, {
       body: { customerPhoneNo, lat, lng },
       token,
-      params: { page: 1, limit: 20 },
+      params: { page, limit },
     }),
 
   // POST /customer/create-address  { address1, address2, city, state, country, pincode, latitude, longitude, landMark, type }
@@ -106,6 +106,12 @@ export const productApi = {
       body: { itemId, outletId, ...(variationId ? { variationid: variationId } : {}) },
       token,
     }),
+
+  // POST /category/preOrder  { outletId, belongsTo, preBookId, orderType, preOrderDate, preOrderTime }
+  // Returns categories with their items scoped to the chosen campaign +
+  // date + slot — the Pre Booking equivalent of getCategories.
+  getPreOrderCategories: (payload, token) =>
+    apiRequest(ENDPOINTS.product.preOrder, { body: payload, token }),
 };
 
 // ── Cart ──────────────────────────────────────────────────────────────────
@@ -160,6 +166,13 @@ export const bannerApi = {
     apiRequest(ENDPOINTS.banner.getActive, { body: { outletId, belongsTo } }),
 };
 
+// ── Delivery ──────────────────────────────────────────────────────────────
+export const deliveryApi = {
+  // POST /delivery/check  { belongsTo, outletId, pincode, state, country }
+  check: (payload, token) =>
+    apiRequest(ENDPOINTS.delivery.check, { body: payload, token }),
+};
+
 // ── Order ─────────────────────────────────────────────────────────────────
 export const orderApi = {
   // POST /order/get-all-order-by-customer?page=1&limit=20  {}
@@ -168,5 +181,19 @@ export const orderApi = {
       body: {},
       token,
       params: { page, limit },
+    }),
+};
+
+// ── Pre Booking ───────────────────────────────────────────────────────────
+// Response contract (documented):
+// { success, count, data: [{ preBookingId, preBookingName, description,
+//   image, allowedOrderTypes[], availableDates[], unAvailableDates[],
+//   timeSlots[], slotCount[] }] }
+export const preBookingApi = {
+  // POST /preBooking/getActive  { outletId, belongsTo }
+  getActive: (outletId, belongsTo, token) =>
+    apiRequest(ENDPOINTS.preBooking.getActive, {
+      body: { outletId, belongsTo },
+      token,
     }),
 };

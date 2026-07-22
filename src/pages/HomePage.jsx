@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Ticket, Sparkles, Leaf, Search, Truck, ShoppingBag, CalendarClock,
+  Sparkles, Leaf, Search, Truck, ShoppingBag, CalendarClock, CalendarPlus,
   Trash2, MapPin, ArrowRight, ArrowUpRight, X,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { BannerSkeleton, ProductGridSkeleton } from "@/pages/LoadingStates";
 import { StoreStatusBadge } from "@/components/shared/StatusPill";
 import { ProductCard } from "@/components/shared/ProductCard";
+import { OfferCard } from "@/components/shared/OfferCard";
 import { AppNavbar } from "@/components/layout/AppShell";
 import SectionDivider from "@/components/shared/SectionDivider";
+import BannerCarousel from "@/components/shared/BannerCarousel";
 import { formatPrice } from "@/lib/theme";
 import { cartApi, extractCarts } from "@/lib/api/services";
 import useReveal from "@/hooks/useReveal";
@@ -54,8 +56,11 @@ function SearchEntry({ value, onChange }) {
 }
 
 /* Smart order-mode fork: delivery / pickup / dine in. Dine In
-   routes to its own flow since it needs date/time/guest inputs. */
-function OrderModeBar({ orderType, setOrderType, isDeliveryAvailable, isPickupAvailable, onBookTable }) {
+   routes to its own flow since it needs date/time/guest inputs. Pre
+   Booking is a fifth, backend-controlled entry — only rendered when
+   settings.preBookingEnabled is true (see AppContext.isPreBookingEnabled).
+   No hardcoded on/off logic here at all. */
+function OrderModeBar({ orderType, setOrderType, isDeliveryAvailable, isPickupAvailable, onBookTable, isPreBookingEnabled, onPreBooking }) {
   const modes = [
     isDeliveryAvailable && { key: "Door Delivery", label: "Delivery", icon: Truck },
     isPickupAvailable && { key: "Self Pickup", label: "Pickup", icon: ShoppingBag },
@@ -86,30 +91,14 @@ function OrderModeBar({ orderType, setOrderType, isDeliveryAvailable, isPickupAv
       >
         <CalendarClock className="h-4 w-4" /> Dine in
       </button>
-    </div>
-  );
-}
-
-function OfferCard({ offer }) {
-  const eligible = offer.eligible !== false;
-  return (
-    <div
-      className={`shrink-0 w-56 lg:w-64 rounded-2xl border p-4 transition-all duration-300 ${eligible
-        ? "border-[var(--iy-accent)]/25 bg-[var(--iy-accent-soft)]/60 hover:-translate-y-1 hover:shadow-[var(--iy-shadow-sm)]"
-        : "border-[var(--iy-border)] bg-white opacity-70"
-        }`}
-    >
-      <div className="flex items-start gap-2.5">
-        <div className="h-9 w-9 rounded-full bg-white flex items-center justify-center shrink-0 shadow-[var(--iy-shadow-xs)]">
-          <Ticket className="h-4 w-4 text-[var(--iy-accent)]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold truncate text-[var(--iy-ink)]">{offer.name}</p>
-          <p className="text-[11px] text-[var(--iy-ink-soft)] mt-0.5">
-            {eligible ? "Tap to apply" : "Add more items to unlock"}
-          </p>
-        </div>
-      </div>
+      {isPreBookingEnabled && (
+        <button
+          onClick={onPreBooking}
+          className="flex-1 flex items-center justify-center gap-2 h-11 rounded-full border border-[var(--iy-border)] bg-white text-sm font-semibold text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30 hover:text-[var(--iy-ink)] transition-all duration-300"
+        >
+          <CalendarPlus className="h-4 w-4" /> Pre Book
+        </button>
+      )}
     </div>
   );
 }
@@ -156,7 +145,8 @@ export default function HomePage() {
   const {
     banners, categories, discounts, setCartCount, isStoreOpen, customer, outlet, token, belongsTo,
     orderType, setOrderType, isDeliveryAvailable, isPickupAvailable, isLoggedIn,
-    quantities, setQuantities, activeOrderId, setActiveOrderId, updateCartFromCarts,
+    quantities, setQuantities, activeOrderId, setActiveOrderId, updateCartFromCarts, settings, userLocation,
+    isPreBookingEnabled,
   } = useApp();
   const firstName = customer?.name?.split(" ")[0];
   const [loading, setLoading] = useState(true);
@@ -166,11 +156,18 @@ export default function HomePage() {
   // Shared cart states managed by AppContext
   const [vegOnly, setVegOnly] = useState(false);
   const categoryRefs = useRef({});
+  // Sticky category bar: refs for auto-centering the active chip within the
+  // horizontal scroller (behavior-only addition, no visual/style changes).
+  const chipRefs = useRef({});
+  const chipsScrollRef = useRef(null);
 
   const menuData = categories || [];
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 800);
+    // Shortened from the previous fixed 800ms — this only gates the
+    // lightweight skeleton placeholders below (categories/products/promo
+    // strip), never the Welcome Card, which now renders independently.
+    const t = setTimeout(() => setLoading(false), 350);
     if (menuData.length) setActiveCategory(menuData[0]._id);
     return () => clearTimeout(t);
   }, [menuData]);
@@ -197,6 +194,16 @@ export default function HomePage() {
     setActiveCategory(catId);
     categoryRefs.current[catId]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // Keep the selected category chip visible within the horizontal chip list
+  // (centers it in the scroller) — pure UX behavior, no layout/style change.
+  useEffect(() => {
+    const chipEl = chipRefs.current[activeCategory];
+    const container = chipsScrollRef.current;
+    if (!chipEl || !container) return;
+    const target = chipEl.offsetLeft - container.clientWidth / 2 + chipEl.offsetWidth / 2;
+    container.scrollTo({ left: Math.max(target, 0), behavior: "smooth" });
+  }, [activeCategory]);
 
   const sortedBanners = [...(banners || [])].sort((a, b) => (a.rank || 0) - (b.rank || 0));
 
@@ -408,7 +415,7 @@ export default function HomePage() {
             >
               <MapPin className="h-4 w-4 text-[var(--iy-accent)] shrink-0" />
               <span className="truncate max-w-[220px] font-medium text-[var(--iy-ink)]">
-                {outlet?.outletName || "Selected Outlet"}
+                {userLocation?.formatted_address || outlet?.outletName || "Selected Outlet"}
               </span>
             </button>
             <StoreStatusBadge isOpen={isStoreOpen} />
@@ -424,51 +431,49 @@ export default function HomePage() {
             isDeliveryAvailable={isDeliveryAvailable}
             isPickupAvailable={isPickupAvailable}
             onBookTable={() => navigate("/book-table")}
+            isPreBookingEnabled={isPreBookingEnabled}
+            onPreBooking={() => navigate("/pre-booking")}
           />
 
-          {/* Offers Banner */}
+          {/* Welcome Card — renders immediately on mount. `customer` is
+              hydrated synchronously from localStorage in AppContext and
+              `outlet` resolves independently, so this never needs to wait
+              on the categories/banners fetch (the source of the old delay).
+              Falls back to a generic subtitle until outlet name is ready —
+              same reserved height either way, so no layout shift. */}
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 70, damping: 14, mass: 0.8, delay: 0.05 }}
+            transition={{ type: "spring", stiffness: 90, damping: 16, mass: 0.7 }}
           >
-            <AnimatePresence mode="wait">
-              {loading ? (
-                <motion.div
-                  key="loading-banner"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="rounded-3xl overflow-hidden shadow-[var(--iy-shadow-xs)]"
-                >
-                  <BannerSkeleton />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="content-banner"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex flex-col gap-4">
-                    {/* Welcome Card */}
-                    <div className="relative rounded-3xl overflow-hidden bg-[var(--iy-ink)] p-6 lg:p-10 text-white shadow-[var(--iy-shadow-md)]">
-                      <div className="iy-drift-slow pointer-events-none absolute -top-10 -right-10 h-40 w-40 lg:h-56 lg:w-56 rounded-full bg-[var(--iy-accent)]/25 blur-3xl" />
-                      <Sparkles className="relative h-5 w-5 lg:h-6 lg:w-6 mb-2 text-[var(--iy-accent)]" />
-                      <p className="relative iy-serif font-medium text-lg lg:text-3xl">
-                        {timeGreeting()}{firstName ? `, ${firstName}` : ""}
-                      </p>
-                      <p className="relative text-sm lg:text-base text-white/70 mt-1">
-                        {outlet?.outletName ? `Ordering from ${outlet.outletName}` : "Fresh food, fast delivery"}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="relative rounded-3xl overflow-hidden bg-[var(--iy-ink)] p-6 lg:p-10 text-white shadow-[var(--iy-shadow-md)]">
+              <div className="iy-drift-slow pointer-events-none absolute -top-10 -right-10 h-40 w-40 lg:h-56 lg:w-56 rounded-full bg-[var(--iy-accent)]/25 blur-3xl" />
+              <Sparkles className="relative h-5 w-5 lg:h-6 lg:w-6 mb-2 text-[var(--iy-accent)]" />
+              <p className="relative iy-serif font-medium text-lg lg:text-3xl">
+                {timeGreeting()}{firstName ? `, ${firstName}` : ""}
+              </p>
+              <p className="relative text-sm lg:text-base text-white/70 mt-1">
+                {outlet?.outletName ? `Ordering from ${outlet.outletName}` : "Fresh food, fast delivery"}
+              </p>
+            </div>
           </motion.div>
+
+          {/* Promo banner strip — still uses a skeleton while secondary
+              (non-blocking) data settles, independent of the Welcome Card. */}
+          <AnimatePresence mode="wait">
+            {loading && (
+              <motion.div
+                key="loading-banner"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-3xl overflow-hidden shadow-[var(--iy-shadow-xs)]"
+              >
+                <BannerSkeleton />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Offers strip */}
           {discounts?.length > 0 && (
@@ -480,29 +485,16 @@ export default function HomePage() {
 
         <SectionDivider variant="gradient" />
 
-        {/* Categories — horizontal, real data, replaces the old sidebar rail */}
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div
-              key="categories-skeleton"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="max-w-desktop mx-auto px-5"
-            >
-              <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-1 px-1">
-                <Skeleton className="h-8 w-24 rounded-full shrink-0" />
-                <Skeleton className="h-8 w-20 rounded-full shrink-0" />
-                <Skeleton className="h-8 w-28 rounded-full shrink-0" />
-                <Skeleton className="h-8 w-24 rounded-full shrink-0" />
-                <Skeleton className="h-8 w-20 rounded-full shrink-0" />
-              </div>
-            </motion.div>
-          ) : (
-            menuData.length > 0 && (
+        {/* Categories — horizontal, real data, replaces the old sidebar rail.
+            Wrapped in a plain (non-animated) sticky container so it becomes
+            pinned immediately below the fixed AppNavbar once scrolled past,
+            without breaking CSS position:sticky via framer-motion transforms.
+            z-40 keeps it stacked under the navbar's z-50 at all times. */}
+        <div className="sticky top-16 lg:top-20 z-40 bg-[var(--iy-bg)]/95 backdrop-blur-md py-2 -my-2">
+          <AnimatePresence mode="wait">
+            {loading ? (
               <motion.div
-                key="categories-content"
+                key="categories-skeleton"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -510,31 +502,51 @@ export default function HomePage() {
                 className="max-w-desktop mx-auto px-5"
               >
                 <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-1 px-1">
-                  <button
-                    onClick={() => setVegOnly(!vegOnly)}
-                    className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300 ${vegOnly ? "bg-[var(--iy-accent-soft)] border-[var(--iy-accent)]/40 text-[var(--iy-accent-dark)]" : "border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30"
-                      }`}
-                  >
-                    <Leaf className="h-3.5 w-3.5" /> Veg only
-                  </button>
-                  {filteredCategories.map((cat) => {
-                    const active = activeCategory === cat._id;
-                    return (
-                      <button
-                        key={cat._id}
-                        onClick={() => scrollToCategory(cat._id)}
-                        className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${active ? "bg-[var(--iy-accent)] text-white shadow-[var(--iy-shadow-sm)]" : "bg-white border border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30 hover:text-[var(--iy-ink)]"
-                          }`}
-                      >
-                        {cat.name}
-                      </button>
-                    );
-                  })}
+                  <Skeleton className="h-8 w-24 rounded-full shrink-0" />
+                  <Skeleton className="h-8 w-20 rounded-full shrink-0" />
+                  <Skeleton className="h-8 w-28 rounded-full shrink-0" />
+                  <Skeleton className="h-8 w-24 rounded-full shrink-0" />
+                  <Skeleton className="h-8 w-20 rounded-full shrink-0" />
                 </div>
               </motion.div>
-            )
-          )}
-        </AnimatePresence>
+            ) : (
+              menuData.length > 0 && (
+                <motion.div
+                  key="categories-content"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="max-w-desktop mx-auto px-5"
+                >
+                  <div ref={chipsScrollRef} className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-1 px-1 scroll-smooth">
+                    <button
+                      onClick={() => setVegOnly(!vegOnly)}
+                      className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300 ${vegOnly ? "bg-[var(--iy-accent-soft)] border-[var(--iy-accent)]/40 text-[var(--iy-accent-dark)]" : "border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30"
+                        }`}
+                    >
+                      <Leaf className="h-3.5 w-3.5" /> Veg only
+                    </button>
+                    {filteredCategories.map((cat) => {
+                      const active = activeCategory === cat._id;
+                      return (
+                        <button
+                          key={cat._id}
+                          ref={(el) => (chipRefs.current[cat._id] = el)}
+                          onClick={() => scrollToCategory(cat._id)}
+                          className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${active ? "bg-[var(--iy-accent)] text-white shadow-[var(--iy-shadow-sm)]" : "bg-white border border-[var(--iy-border)] text-[var(--iy-ink-soft)] hover:border-[var(--iy-accent)]/30 hover:text-[var(--iy-ink)]"
+                            }`}
+                        >
+                          {cat.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Popular / Recommended — grouped by category, driven entirely by
             the categories API response (no invented "popular" endpoint). */}
@@ -641,7 +653,7 @@ export default function HomePage() {
 
       {/* Banner Popup Overlay */}
       <AnimatePresence>
-        {!loading && !isBannerDismissed && sortedBanners.length > 0 && (
+        {!loading && !isBannerDismissed && sortedBanners.length > 0 && settings?.banner?.enable !== false && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -657,11 +669,14 @@ export default function HomePage() {
               className="relative w-full max-w-lg"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory rounded-3xl shadow-2xl">
-                {sortedBanners.map(banner => (
+              <BannerCarousel
+                banners={sortedBanners}
+                autoPlay={!!settings?.banner?.autoScroll}
+                roundedClassName="rounded-3xl"
+                className="shadow-2xl"
+                renderBanner={(banner) => (
                   <div
-                    key={banner._id || Math.random()}
-                    className="snap-center shrink-0 w-full relative overflow-hidden cursor-pointer bg-white"
+                    className="relative w-full h-full cursor-pointer bg-white"
                     onClick={() => handleBannerClick(banner)}
                   >
                     <picture>
@@ -671,12 +686,13 @@ export default function HomePage() {
                       <img
                         src={banner.image?.mobileView || banner.image?.webView || banner.imageUrl}
                         alt="Promo"
-                        className="w-full h-auto max-h-[70vh] object-contain rounded-3xl"
+                        draggable={false}
+                        className="w-full h-auto max-h-[70vh] object-contain"
                       />
                     </picture>
                   </div>
-                ))}
-              </div>
+                )}
+              />
               {/* Cancel Button */}
               <button
                 onClick={() => setIsBannerDismissed(true)}

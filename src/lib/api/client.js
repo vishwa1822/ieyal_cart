@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "./config";
+import { getToken } from "../theme";
 
 class ApiError extends Error {
   constructor(message, status, data) {
@@ -19,7 +20,8 @@ export async function apiRequest(endpoint, { method = "POST", body, token, param
   }
 
   const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const authToken = token || getToken();
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
   const res = await fetch(url.toString(), {
     method,

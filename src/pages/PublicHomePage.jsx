@@ -292,7 +292,7 @@ export default function PublicHomePage() {
   return (
     <div className="ieyal min-h-screen w-full">
       <SiteNavbar
-        onLoginClick={() => navigate(isLoggedIn ? "/profile" : "/login")}
+        onLoginClick={() => navigate(isLoggedIn ? "/home" : "/login")}
         isLoggedIn={isLoggedIn}
         customerName={customer?.name}
       />

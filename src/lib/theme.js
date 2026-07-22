@@ -184,6 +184,15 @@ export function getSavedOutlet() {
   }
 }
 
+export function getSavedAddress() {
+  try {
+    const a = localStorage.getItem("selectedAddress");
+    return a ? JSON.parse(a) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function saveOrderType(type) {
   localStorage.setItem(STORAGE_KEYS.orderType, type);
 }

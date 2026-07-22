@@ -108,6 +108,7 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -115,6 +116,7 @@ body {
   .card-hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
+
   .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
@@ -140,20 +142,25 @@ body {
   background: var(--iy-bg);
   color: var(--iy-ink);
 }
-.ieyal .iy-serif { font-family: "Fraunces", "Georgia", serif; }
+
+.ieyal .iy-serif {
+  font-family: "Fraunces", "Georgia", serif;
+}
 
 /* Elevation scale — one source of truth instead of ad-hoc rgba() per element */
 .ieyal {
-  --iy-shadow-xs: 0 2px 8px -2px rgba(34,26,20,0.10);
-  --iy-shadow-sm: 0 10px 24px -10px rgba(34,26,20,0.16);
-  --iy-shadow-md: 0 20px 40px -16px rgba(34,26,20,0.22);
-  --iy-shadow-lg: 0 30px 60px -20px rgba(34,26,20,0.30);
-  --iy-shadow-glow: 0 16px 32px -12px rgba(166,65,43,0.45);
+  --iy-shadow-xs: 0 2px 8px -2px rgba(34, 26, 20, 0.10);
+  --iy-shadow-sm: 0 10px 24px -10px rgba(34, 26, 20, 0.16);
+  --iy-shadow-md: 0 20px 40px -16px rgba(34, 26, 20, 0.22);
+  --iy-shadow-lg: 0 30px 60px -20px rgba(34, 26, 20, 0.30);
+  --iy-shadow-glow: 0 16px 32px -12px rgba(166, 65, 43, 0.45);
   --iy-nav-h: 84px;
 }
 
 /* Anchors should never land a heading underneath the fixed, blurred navbar */
-.ieyal section[id] { scroll-margin-top: var(--iy-nav-h); }
+.ieyal section[id] {
+  scroll-margin-top: var(--iy-nav-h);
+}
 
 /* Visible, on-brand focus ring everywhere — keyboard users get the same
    care as pointer users. Uses :focus-visible so mouse clicks stay clean. */
@@ -164,19 +171,137 @@ body {
   border-radius: inherit;
 }
 
-@keyframes iyFloat { 0%,100% { transform: translateY(0) rotate(var(--r,0deg)); } 50% { transform: translateY(-14px) rotate(var(--r,0deg)); } }
-@keyframes iyFloatSlow { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-@keyframes iyDrift { 0% { transform: translate(0,0); } 50% { transform: translate(18px,-24px); } 100% { transform: translate(0,0); } }
-@keyframes iyDriftSlow { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-24px,18px) scale(1.08); } }
-@keyframes iyPulse { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
-@keyframes iyShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-@keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes iyFloat {
 
-.iy-float { animation: iyFloat 7s ease-in-out infinite; }
-.iy-float-slow { animation: iyFloatSlow 9s ease-in-out infinite; }
-.iy-particle { animation: iyDrift 12s ease-in-out infinite; }
-.iy-drift-slow { animation: iyDriftSlow 16s ease-in-out infinite; }
-.iy-pulse-once { animation: iyPulse .38s ease-out; }
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+
+  50% {
+    transform: translateY(-14px) rotate(var(--r, 0deg));
+  }
+}
+
+@keyframes iyFloatSlow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes iyDrift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(18px, -24px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes iyDriftSlow {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-24px, 18px) scale(1.08);
+  }
+}
+
+@keyframes iyPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.28);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes iyFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iyShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.iy-float {
+  animation: iyFloat 7s ease-in-out infinite;
+}
+
+.iy-float-slow {
+  animation: iyFloatSlow 9s ease-in-out infinite;
+}
+
+.iy-particle {
+  animation: iyDrift 12s ease-in-out infinite;
+}
+
+.iy-drift-slow {
+  animation: iyDriftSlow 16s ease-in-out infinite;
+}
+
+.iy-pulse-once {
+  animation: iyPulse .38s ease-out;
+}
 
 .iy-skeleton {
   background: linear-gradient(90deg, #EDE4D6 25%, #F6EFE3 37%, #EDE4D6 63%);
@@ -184,41 +309,145 @@ body {
   animation: iyShimmer 1.6s ease-in-out infinite;
 }
 
-.iy-reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s cubic-bezier(.22,.61,.36,1), transform .8s cubic-bezier(.22,.61,.36,1); }
-.iy-reveal.iy-in { opacity: 1; transform: translateY(0); }
-.iy-reveal-left { opacity: 0; transform: translateX(-28px); transition: opacity .8s cubic-bezier(.22,.61,.36,1), transform .8s cubic-bezier(.22,.61,.36,1); }
-.iy-reveal-left.iy-in { opacity: 1; transform: translateX(0); }
-.iy-reveal-right { opacity: 0; transform: translateX(28px); transition: opacity .8s cubic-bezier(.22,.61,.36,1), transform .8s cubic-bezier(.22,.61,.36,1); }
-.iy-reveal-right.iy-in { opacity: 1; transform: translateX(0); }
+.iy-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity .8s cubic-bezier(.22, .61, .36, 1), transform .8s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal.iy-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.iy-reveal-left {
+  opacity: 0;
+  transform: translateX(-28px);
+  transition: opacity .8s cubic-bezier(.22, .61, .36, 1), transform .8s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-left.iy-in {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.iy-reveal-right {
+  opacity: 0;
+  transform: translateX(28px);
+  transition: opacity .8s cubic-bezier(.22, .61, .36, 1), transform .8s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-right.iy-in {
+  opacity: 1;
+  transform: translateX(0);
+}
 
 /* Blur — for hero media / large imagery, reads as "developing focus" rather
    than a hard cut. Kept subtle so it never looks like a loading glitch. */
-.iy-reveal-blur { opacity: 0; transform: translateY(16px) scale(1.02); filter: blur(10px); transition: opacity .9s cubic-bezier(.22,.61,.36,1), transform .9s cubic-bezier(.22,.61,.36,1), filter .9s cubic-bezier(.22,.61,.36,1); }
-.iy-reveal-blur.iy-in { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+.iy-reveal-blur {
+  opacity: 0;
+  transform: translateY(16px) scale(1.02);
+  filter: blur(10px);
+  transition: opacity .9s cubic-bezier(.22, .61, .36, 1), transform .9s cubic-bezier(.22, .61, .36, 1), filter .9s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-blur.iy-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
 
 /* Scale — for cards / tiles, a soft "settle into place" instead of blunt fade */
-.iy-reveal-scale { opacity: 0; transform: scale(0.94); transition: opacity .7s cubic-bezier(.22,.61,.36,1), transform .7s cubic-bezier(.22,.61,.36,1); }
-.iy-reveal-scale.iy-in { opacity: 1; transform: scale(1); }
+.iy-reveal-scale {
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity .7s cubic-bezier(.22, .61, .36, 1), transform .7s cubic-bezier(.22, .61, .36, 1);
+}
+
+.iy-reveal-scale.iy-in {
+  opacity: 1;
+  transform: scale(1);
+}
 
 /* Stagger — apply .iy-stagger to a container; children pick up increasing
    delay via nth-child so a grid/list arrives as a ripple, not all at once. */
-.iy-stagger > *:nth-child(1) { transition-delay: 0ms; }
-.iy-stagger > *:nth-child(2) { transition-delay: 90ms; }
-.iy-stagger > *:nth-child(3) { transition-delay: 180ms; }
-.iy-stagger > *:nth-child(4) { transition-delay: 270ms; }
-.iy-stagger > *:nth-child(5) { transition-delay: 360ms; }
-.iy-stagger > *:nth-child(6) { transition-delay: 450ms; }
+.iy-stagger>*:nth-child(1) {
+  transition-delay: 0ms;
+}
+
+.iy-stagger>*:nth-child(2) {
+  transition-delay: 90ms;
+}
+
+.iy-stagger>*:nth-child(3) {
+  transition-delay: 180ms;
+}
+
+.iy-stagger>*:nth-child(4) {
+  transition-delay: 270ms;
+}
+
+.iy-stagger>*:nth-child(5) {
+  transition-delay: 360ms;
+}
+
+.iy-stagger>*:nth-child(6) {
+  transition-delay: 450ms;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .iy-float, .iy-float-slow, .iy-particle, .iy-drift-slow, .iy-pulse-once, .iy-skeleton { animation: none; }
-  .iy-reveal, .iy-reveal-left, .iy-reveal-right, .iy-reveal-blur, .iy-reveal-scale { transition: none; opacity: 1; transform: none; filter: none; }
-  .iy-stagger > * { transition-delay: 0ms !important; }
+
+  .iy-float,
+  .iy-float-slow,
+  .iy-particle,
+  .iy-drift-slow,
+  .iy-pulse-once,
+  .iy-skeleton {
+    animation: none;
+  }
+
+  .iy-reveal,
+  .iy-reveal-left,
+  .iy-reveal-right,
+  .iy-reveal-blur,
+  .iy-reveal-scale {
+    transition: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .iy-stagger>* {
+    transition-delay: 0ms !important;
+  }
 }
 
 /* ── Section dividers — replace blank section-to-section seams with a
    quiet, on-brand transition. Single SVG, currentColor-driven. ─────────── */
-.iy-divider { display: block; width: 100%; height: 72px; color: var(--iy-bg); line-height: 0; }
-.iy-divider--ink { color: var(--iy-ink); }
-.iy-divider--surface { color: var(--iy-surface); }
-.iy-divider svg { display: block; width: 100%; height: 100%; }
-.iy-divider-gradient { height: 48px; width: 100%; background: linear-gradient(180deg, transparent 0%, var(--iy-bg) 100%); }
+.iy-divider {
+  display: block;
+  width: 100%;
+  height: 72px;
+  color: var(--iy-bg);
+  line-height: 0;
+}
+
+.iy-divider--ink {
+  color: var(--iy-ink);
+}
+
+.iy-divider--surface {
+  color: var(--iy-surface);
+}
+
+.iy-divider svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.iy-divider-gradient {
+  height: 48px;
+  width: 100%;
+  background: linear-gradient(180deg, transparent 0%, var(--iy-bg) 100%);
+}

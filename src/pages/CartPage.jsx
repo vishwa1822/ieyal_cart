@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Button, Separator, Skeleton, Card } from "@/components/ui";
 import { PageShell } from "@/components/layout/AppShell";
 import {
   Minus, Plus, Trash2, ShoppingBag, Tag, Check, X,
-  NotebookPen, Clock, Loader2, AlertCircle, Lock,
+  NotebookPen, Clock, Loader2, AlertCircle, Lock, CalendarClock,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { cartApi, discountApi, extractCarts } from "@/lib/api/services";
@@ -146,9 +146,9 @@ function BillRow({ label, value, success, bold }) {
 export default function CartPage() {
   const navigate = useNavigate();
   const {
-    customer, outlet, token, setCartCount, isLoggedIn,
+    customer, outlet, token, setCartCount, isLoggedIn, isStoreOpen,
     cartData, setCartData, cartItems: items, setCartItems: setItems,
-    updateCartFromCarts
+    updateCartFromCarts, preBooking
   } = useApp();
 
   // Shared cart states managed by AppContext
@@ -466,6 +466,10 @@ export default function CartPage() {
   const itemCount = selectedItemsList.reduce((s, it) => s + it.qty, 0);
 
   // ── Render guards ──────────────────────────────────────────────────────
+  if (!isStoreOpen) {
+    return <Navigate to="/closed" replace />;
+  }
+
   if (loading) {
     return (
       <PageShell title="Cart">
@@ -540,6 +544,39 @@ export default function CartPage() {
           <h1 className="font-display text-2xl sm:text-3xl font-medium text-[var(--color-ink)]">Cart</h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-1">Review your items and proceed to checkout</p>
         </div>
+
+        {/* Display-only extension: campaign / booking date / slot / order
+            type from the Pre Booking flow. Cart logic below (qty, remove,
+            coupon, totals) is completely untouched. */}
+        {preBooking?.campaign && (
+          <Card className="mb-5 !shadow-[var(--shadow-xs)] p-4 sm:p-5 border-[var(--color-primary)]/20 bg-[var(--color-primary)]/[0.03]">
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center shrink-0">
+                <CalendarClock className="h-4 w-4 text-[var(--color-primary)]" />
+              </div>
+              <div className="flex-1 min-w-0 grid sm:grid-cols-3 gap-x-4 gap-y-1 text-sm">
+                <div>
+                  <p className="text-xs text-[var(--color-text-muted)]">Campaign</p>
+                  <p className="font-semibold text-[var(--color-ink)] truncate">{preBooking.campaign.name}</p>
+                </div>
+                {preBooking.date && (
+                  <div>
+                    <p className="text-xs text-[var(--color-text-muted)]">Booking date</p>
+                    <p className="font-medium text-[var(--color-ink)]">
+                      {new Date(preBooking.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-[var(--color-text-muted)]">Slot &amp; order type</p>
+                  <p className="font-medium text-[var(--color-ink)]">
+                    {preBooking.slot?.startTime || "—"}{preBooking.orderType ? ` · ${preBooking.orderType}` : ""}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-8 lg:items-start">
 
           {/* ── Left column: items + note + coupon ─────────────────── */}
